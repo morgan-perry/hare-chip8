@@ -2,6 +2,11 @@ use sdl3::*;
 use types::c;
 
 export fn main() void = {
+	let mem = alloc(4096);
+	draw();
+};
+
+fn draw() void = {
 	SDL_Init(SDL_INIT_VIDEO);
 	defer SDL_Quit();
 

@@ -4,13 +4,19 @@
 LIBS=-lc -lSDL3
 
 run:
-	hare run $(LIBS) chip8
+	hare run $(LIBS) cmd/chip8
+
+build:
+	hare build $(LIBS) cmd/chip8
+
+check:
+	hare test $(LIBS) cmd/chip8
 
 clean:
-	rm -rf docs demo
+	rm -rf docs chip8
 
 docs:
-	mkdir -p docs/sdl3/image
-	haredoc -Fhtml sdl3 > docs/sdl3/index.html
+	mkdir -p doc/chip8/image
+	haredoc -Fhtml chip8 > docs/chip8/index.html
 
-.PHONY: clean demo docs run
+.PHONY: run build check clean docs
