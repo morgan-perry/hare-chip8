@@ -59,7 +59,6 @@ const font: [_]u8 = [
 	0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 ];
 
-
 fn cycle(cpu: *cpu_state) void = {
 	if (cpu.program_counter == 4096) return;
 	const raw_opcode = construct_opcode(cpu);
@@ -79,16 +78,16 @@ fn cycle(cpu: *cpu_state) void = {
 	case CLS => fmt::printfln("CLS")!;
 	case => void;
 	};
-	// increment_pc(cpu);
-	// cycle(cpu);
 };
 
+// Combines two u8's into a raw opcode
 fn construct_opcode(cpu: *cpu_state) u16 = {
 	const opcode = cpu.memory[cpu.program_counter]: u16 << 8
 	| cpu.memory[cpu.program_counter + 1]: u16;
 	return opcode;
 };
 
+// Reads u16 opcode and matches it with type defined in opcode
 fn decode_opcode(raw_opcode: u16) (opcode | opcodeerr) = {
 	const first_nibble = (raw_opcode >> 12)	& 0xF;
 	const NNN = raw_opcode & 0xFFF;
@@ -137,4 +136,38 @@ fn load_rom(filename: str, cpu: *cpu_state) void = {
 // Increments the program counter by the default op-code length: 2
 fn increment_pc(cpu: *cpu_state) void = {
 	cpu.program_counter += 2;
+};
+
+@test fn increment_pc() void = {
+	let cpu = cpu_state {...};
+	increment_pc(&cpu);
+	assert(cpu.program_counter == 2);
+
+	cpu.program_counter = 14;
+	increment_pc(&cpu);
+	increment_pc(&cpu);
+	assert(cpu.program_counter == 18);
+};
+
+@test fn construct_opcode() void = {
+	let cpu = cpu_state {...};
+	cpu.memory[0] = 0x00;
+	cpu.memory[1] = 0xEE;
+	const opcode = construct_opcode(&cpu);
+	// This test passes if you don't cast the bitshift op to u16 :(
+	assert(opcode == 0x00EE, "Opcode did not equal 0x00EE");
+
+	cpu.memory[0] = 0x12;
+	cpu.memory[1] = 0xFF;
+	const opcode = construct_opcode(&cpu);
+	assert(opcode == 0x12FF, "Opcode did not equal 0x12FF");
+};
+
+@test fn decode_opcode() void = {
+	const raw_op: u16 = 0x00E0;
+	const dec_op: opcode =
+		decode_opcode(raw_op)!; assert(dec_op is CLS);
+	const raw_op: u16 = 0x00EE;
+	const dec_op: opcode =
+		decode_opcode(raw_op)!; assert(dec_op is RET);
 };
