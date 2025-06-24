@@ -27,6 +27,7 @@ const font: [_]u8 = [
 	0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 ];
 
+
 type state = struct {
 	memory: [4096]u8,
 	stack: [16]u16,
@@ -38,10 +39,11 @@ type state = struct {
 export fn main() void = {
 	if (len(os::args) <= 1) fmt::fatalf("Please Provide a ROM File");
 
-	let cpu = state {...};
+	let cpu = state {program_counter = 513, ...};
 	load_rom(os::args[1], &cpu);
 
-	// increment_pc(&cpu.program_counter);
+	cycle(&cpu);
+
 	// draw();
 };
 
@@ -60,11 +62,13 @@ fn cycle(cpu: *state) void = {
 	case => fmt::printfln("TODO")!;
 	};
 };
+
 fn construct_opcode(cpu: *state) u16 = {
 	const opcode = cpu.memory[cpu.program_counter]: u16 << 8
 	| cpu.memory[cpu.program_counter + 1]: u16;
 	return opcode;
 };
+
 // Scans the Chip-8 ROM file byte by byte to supplied state
 fn load_rom(filename: str, cpu: *state) void = {
 	fmt::printfln("Reading Rom!")!;
