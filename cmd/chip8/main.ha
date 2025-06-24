@@ -143,4 +143,16 @@ fn draw() void = {
 	increment_pc(&cpu);
 	assert(cpu.program_counter == 18);
 };
+
+@test fn construct_opcode() void = {
+	let cpu = state {...};
+	cpu.memory[0] = 0x00;
+	cpu.memory[1] = 0xEE;
+	const opcode = construct_opcode(&cpu);
+	assert(opcode == 0x00EE, "Opcode did not equal 0x00EE");
+
+	cpu.memory[0] = 0x12;
+	cpu.memory[1] = 0xFF;
+	const opcode = construct_opcode(&cpu);
+	assert(opcode == 0x12FF, "Opcode did not equal 0x12FF");
 };
