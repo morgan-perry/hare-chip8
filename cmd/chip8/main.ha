@@ -28,7 +28,7 @@ const font: [_]u8 = [
 ];
 
 
-type state = struct {
+type cpu_state = struct {
 	memory: [4096]u8,
 	stack: [16]u16,
 	program_counter: u16,
@@ -39,17 +39,70 @@ type state = struct {
 export fn main() void = {
 	if (len(os::args) <= 1) fmt::fatalf("Please Provide a ROM File");
 
-	let cpu = state {program_counter = 513, ...};
+	let cpu = cpu_state {program_counter = 513, ...};
 	load_rom(os::args[1], &cpu);
 
 	cycle(&cpu);
-
-	// draw();
+	draw();
 };
 
-fn cycle(cpu: *state) void = {
+type CLS = struct { x: void, }; // Clear Screen (no parameters)
+type RET = struct { x: void, }; // Return (no parameters)
+
+type JP_ADDR = struct {
+	addr: u16,
+};
+type CALL_ADDR = struct {
+	addr: u16,
+};
+type LD_VX_BYTE = struct {
+	vx: u8,
+	byte: u8,
+};
+type ADD_VX_BYTE = struct {
+	vx: u8,
+	byte: u8,
+};
+
+type NOB = struct { x: void,};
+
+type opcode = (
+	CLS | RET | JP_ADDR | CALL_ADDR | LD_VX_BYTE | ADD_VX_BYTE | NOB
+);
+// type UnknownOpcodeError = !struct {opcode: u16,}; // Stores the unknown opcode value
+
+fn decode_opcode(raw_opcode: u16) opcode = {
+	const first_nibble = (raw_opcode >> 12)	& 0xF;
+	const NNN = raw_opcode & 0xFFF;
+	const NN = raw_opcode & 0xFF;
+	const X = (raw_opcode >> 8) & 0xF;
+	const Y = (raw_opcode >> 4) & 0xF;
+
+	return switch (first_nibble) {
+	case 0x0 =>
+		yield switch (NNN) {
+		case 0x0E0 => yield CLS{...};
+		case 0x0EE => yield RET{...};
+		case => yield NOB{...};
+		};
+	case 0x1 => yield JP_ADDR { addr = NNN: u16 };
+	case => yield NOB{...};
+	};
+};
+
+@test fn decode_opcode() void = {
+	const raw_op: u16 = 0x00E0;
+	const dec_op: opcode =
+		decode_opcode(raw_op); assert(dec_op is CLS);
+	const raw_op: u16 = 0x00EE;
+	const dec_op: opcode =
+		decode_opcode(raw_op); assert(dec_op is RET);
+};
+
+fn cycle(cpu: *cpu_state) void = {
 	const opcode = construct_opcode(cpu);
 	const first = opcode >> 12;
+	fmt::printfln("OPCODE: {:X}\nFIRST: {:X}", opcode, first)!;
 
 	switch (first) {
 	case 0x0 => {
@@ -59,18 +112,19 @@ fn cycle(cpu: *state) void = {
 		};
 		increment_pc(cpu);
 	};
-	case => fmt::printfln("TODO")!;
+	case => {fmt::printfln("TODO")!; return;};
 	};
+	cycle(cpu);
 };
 
-fn construct_opcode(cpu: *state) u16 = {
+fn construct_opcode(cpu: *cpu_state) u16 = {
 	const opcode = cpu.memory[cpu.program_counter]: u16 << 8
 	| cpu.memory[cpu.program_counter + 1]: u16;
 	return opcode;
 };
 
-// Scans the Chip-8 ROM file byte by byte to supplied state
-fn load_rom(filename: str, cpu: *state) void = {
+// Scans the Chip-8 ROM file byte by byte to supplied cpu_state
+fn load_rom(filename: str, cpu: *cpu_state) void = {
 	fmt::printfln("Reading Rom!")!;
 	const input = match (os::open(filename)) {
 	case let file: io::file =>
@@ -96,7 +150,7 @@ fn load_rom(filename: str, cpu: *state) void = {
 };
 
 // Increments the program counter by the default op-code length: 2
-fn increment_pc(cpu: *state) void = {
+fn increment_pc(cpu: *cpu_state) void = {
 	cpu.program_counter += 2;
 };
 
@@ -104,29 +158,26 @@ fn draw() void = {
 	SDL_Init(SDL_INIT_VIDEO);
 	defer SDL_Quit();
 
-	const win = SDL_CreateWindow(
-		c::nulstr("hare-sdl3 demo\0"),
-		640, 480, 0);
-	assert(win != null);
+	const win: nullable *SDL_Window = null;
+	const render: nullable *SDL_Renderer = null;
+	SDL_CreateWindowAndRenderer(c::nulstr("hare-sdl3 demo\0"),
+		640, 480, 0, &win, &render);
+	assert(win != null); assert(render != null);
 	defer SDL_DestroyWindow(win);
 
-	const render = SDL_CreateRenderer(win, null);
-	assert(render != null);
-
-	let rect = SDL_FRect {
-		x = 0.0,
-		y = 0.0,
-		w = 50.0,
-		h = 50.0,	
-	};
+	let rect = SDL_FRect { x = 0.0, y = 0.0, w = 50.0, h = 50.0, };
 
 	let run = true;
 	let ev = SDL_Event { ... };
 	for (run) {
 		for (SDL_PollEvent(&ev)) {
-			if (ev.__type == SDL_EVENT_QUIT) {
-				run = false;
+			switch (ev.__type) {
+			case SDL_EVENT_QUIT => run = false;
+			case => continue;
 			};
+			// if (ev.__type == SDL_EVENT_QUIT) {
+			// 	run = false;
+			// };
 		};
 
 		SDL_RenderClear(render);
@@ -138,7 +189,7 @@ fn draw() void = {
 };
 
 @test fn increment_pc() void = {
-	let cpu = state {...};
+	let cpu = cpu_state {...};
 	increment_pc(&cpu);
 	assert(cpu.program_counter == 2);
 
@@ -149,10 +200,11 @@ fn draw() void = {
 };
 
 @test fn construct_opcode() void = {
-	let cpu = state {...};
+	let cpu = cpu_state {...};
 	cpu.memory[0] = 0x00;
 	cpu.memory[1] = 0xEE;
 	const opcode = construct_opcode(&cpu);
+	// This test passes if you don't cast the bitshift op to u16 :(
 	assert(opcode == 0x00EE, "Opcode did not equal 0x00EE");
 
 	cpu.memory[0] = 0x12;
