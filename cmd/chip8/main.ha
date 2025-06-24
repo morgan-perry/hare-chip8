@@ -64,14 +64,15 @@ type ADD_VX_BYTE = struct {
 	byte: u8,
 };
 
-type NOB = struct { x: void,};
-
 type opcode = (
-	CLS | RET | JP_ADDR | CALL_ADDR | LD_VX_BYTE | ADD_VX_BYTE | NOB
+	CLS | RET | JP_ADDR | CALL_ADDR | LD_VX_BYTE | ADD_VX_BYTE
 );
+
+type OpcodeError = !struct { raw: u16,};
+
 // type UnknownOpcodeError = !struct {opcode: u16,}; // Stores the unknown opcode value
 
-fn decode_opcode(raw_opcode: u16) opcode = {
+fn decode_opcode(raw_opcode: u16) (opcode | OpcodeError) = {
 	const first_nibble = (raw_opcode >> 12)	& 0xF;
 	const NNN = raw_opcode & 0xFFF;
 	const NN = raw_opcode & 0xFF;
@@ -83,21 +84,13 @@ fn decode_opcode(raw_opcode: u16) opcode = {
 		yield switch (NNN) {
 		case 0x0E0 => yield CLS{...};
 		case 0x0EE => yield RET{...};
-		case => yield NOB{...};
+		case => yield OpcodeError{raw = raw_opcode,};
 		};
 	case 0x1 => yield JP_ADDR { addr = NNN: u16 };
-	case => yield NOB{...};
+	case => yield OpcodeError{raw = raw_opcode,};
 	};
 };
 
-@test fn decode_opcode() void = {
-	const raw_op: u16 = 0x00E0;
-	const dec_op: opcode =
-		decode_opcode(raw_op); assert(dec_op is CLS);
-	const raw_op: u16 = 0x00EE;
-	const dec_op: opcode =
-		decode_opcode(raw_op); assert(dec_op is RET);
-};
 
 fn cycle(cpu: *cpu_state) void = {
 	const opcode = construct_opcode(cpu);
@@ -211,4 +204,13 @@ fn draw() void = {
 	cpu.memory[1] = 0xFF;
 	const opcode = construct_opcode(&cpu);
 	assert(opcode == 0x12FF, "Opcode did not equal 0x12FF");
+};
+
+@test fn decode_opcode() void = {
+	const raw_op: u16 = 0x00E0;
+	const dec_op: opcode =
+		decode_opcode(raw_op)!; assert(dec_op is CLS);
+	const raw_op: u16 = 0x00EE;
+	const dec_op: opcode =
+		decode_opcode(raw_op)!; assert(dec_op is RET);
 };
