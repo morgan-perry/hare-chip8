@@ -45,6 +45,26 @@ export fn main() void = {
 	// draw();
 };
 
+fn cycle(cpu: *state) void = {
+	const opcode = construct_opcode(cpu);
+	const first = opcode >> 12;
+
+	switch (first) {
+	case 0x0 => {
+		switch (opcode) {
+		case 0x00E0 => fmt::printfln("CLEAR SCREEN")!;
+		case => fmt::fatalf("0x0 Opcode Parsing Issue");
+		};
+		increment_pc(cpu);
+	};
+	case => fmt::printfln("TODO")!;
+	};
+};
+fn construct_opcode(cpu: *state) u16 = {
+	const opcode = cpu.memory[cpu.program_counter]: u16 << 8
+	| cpu.memory[cpu.program_counter + 1]: u16;
+	return opcode;
+};
 // Scans the Chip-8 ROM file byte by byte to supplied state
 fn load_rom(filename: str, cpu: *state) void = {
 	fmt::printfln("Reading Rom!")!;
