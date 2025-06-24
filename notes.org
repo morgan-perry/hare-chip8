@@ -51,14 +51,19 @@ const font [16]u16 // copy paste from [[https://tobiasvl.github.io/blog/write-a-
 - [X] Read CHIP-8 files
 - [X] Rendering setup for display
 - [X] Parse Op Codes
-- [ ] Manage delays and timers
-- [ ] 1-chip8-logo test rom
-  * Clear the screen
-  * Load normal register with immediate value
-  * Load i register with immediate value
-  * Draw sprite to screen (only aligned)
-  * Jump (at the end, so kinda optional)
+- [ ] Manage delays and o kinda optional)
  
 
 ** Incrementing CPU Cycle
+
 We read instruction -> Run Instruction -> Increment PC by 2 -> Redraw
+
+** TODO Logo Test ROM Opcodes to Implement [0/2]
+
+I have have found a test ROM that only uses 4 instructions, I believe this is a good first step to implement some instructions and get an easy win :).
+
++ [ ] Clear the screen
++ [ ] Load normal register with immediate value
++ [ ] Load i register with immediate value
++ [ ] Draw sprite to screen (only aligned)
++ [ ] Jump (at the end, s
