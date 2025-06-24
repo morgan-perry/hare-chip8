@@ -71,6 +71,9 @@ fn load_rom(filename: str, cpu: *state) void = {
 	};
 };
 
+// Increments the program counter by the default op-code length: 2
+fn increment_pc(pc: *u16) void = {
+	*pc += 2;
 };
 
 fn draw() void = {
@@ -108,4 +111,15 @@ fn draw() void = {
 		SDL_SetRenderDrawColor(render, 29, 31, 33, 0);
 		SDL_RenderPresent(render);
 	};
+};
+
+@test fn increment_pc() void = {
+	let program_counter: u16 = 0;
+	increment_pc(&program_counter);
+	assert(program_counter == 2);
+
+	let program_counter: u16 = 14;
+	increment_pc(&program_counter);
+	increment_pc(&program_counter);
+	assert(program_counter == 18);
 };
