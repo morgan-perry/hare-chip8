@@ -1,5 +1,13 @@
 use sdl3::*;
 use types::c;
+use fmt;
+use os;
+use io;
+use fs;
+use time;
+use bufio;
+use types;
+
 const font: [_]u8 = [
 	0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
 	0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -19,9 +27,50 @@ const font: [_]u8 = [
 	0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 ];
 
+type state = struct {
+	memory: [4096]u8,
+	stack: [16]u16,
+	program_counter: u16,
+	stack_ptr: u8,
+	registers: [16]u8,
+};
+
 export fn main() void = {
-	let mem = alloc(4096);
-	draw();
+	if (len(os::args) <= 1) fmt::fatalf("Please Provide a ROM File");
+
+	let cpu = state {...};
+	load_rom(os::args[1], &cpu);
+
+	// increment_pc(&cpu.program_counter);
+	// draw();
+};
+
+// Scans the Chip-8 ROM file byte by byte to supplied state
+fn load_rom(filename: str, cpu: *state) void = {
+	fmt::printfln("Reading Rom!")!;
+	const input = match (os::open(filename)) {
+	case let file: io::file =>
+		yield file;
+	case let err: fs::error =>
+		fmt::fatalf("Error opening {}: {}",
+			os::args[1], fs::strerror(err));
+	};
+	defer io::close(input)!;
+
+	const scan = bufio::newscanner(input, types::SIZE_MAX);
+	for (let i = 1u; true; i += 1) { // NOTE: might have to do: 0u
+		const byte = match (bufio::scan_byte(&scan)!) {
+		case io::EOF =>
+			break;
+		case let byte: u8 =>
+			yield byte;
+		};
+		// 0x200 is 512 (End of Chip-8 Interpreter)
+ 		cpu.memory[0x200 + i] = byte; 
+		fmt::printfln("{}\t{:X}", 0x200 + i, byte)!;
+	};
+};
+
 };
 
 fn draw() void = {
