@@ -1,0 +1,64 @@
+#+startup: content
+Phrases surrounded in "?" are meta-notes directed towards myself
+* Project Notes
+** Initial Thoughts from [[http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#memmap][Cowgod's Chip-8 Technical Reference]]
+
++ Most instructions seem simple, delays and timers might be trouble
++ Have some way of handling sprites
++ idk how to start an interrupt accurately (if it even needs to be)
++ Need some way to handle delays running the same time as everything else (no threading) ?event loop?
+  + [[https://lazyfoo.net/tutorials/SDL/24_calculating_frame_rate/index.php][Lazy Foo' - Calculating Frame Rate]], might be useful to calculate the time between each frame, take average then execute the timer when total + average > delay ?must be simpler way right?
+  + [[https://lazyfoo.net/tutorials/SDL/23_advanced_timers/index.php][Lazy Foo' - Advanced Timers]], ?did i just find the answer?
++ Setup tile based map for =SDL= ([[https://www.youtube.com/watch?v=lfiQNCNUifI][raylib snake Karl Zylinski]] example for zoom using camera)
+  + [[https://lazyfoo.net/tutorials/SDL/30_scrolling/index.php][Lazy Foo' Productions - Scrolling]] - Another example of 2D camera but in =SDL=
++ 4096 Total Memory
+  + -> 512 Not used reserved for Interpreter, Start for most Chip-8 programs
+  + -> 1536 Start of ETI 660 Chip-8 programs
+  + -> 4095 End of Chip-8 RAM
++ 16 registers, 8 bits
+  + Refereed to as =Vx= (=0= through =F= hex)
+  + 16 bit register called =I=, used to store memory address, so lowest (rightmost) 12 bits are used
+  + Can't use =VF=
++ "Pseudo-Registers"
+  + Program Counter (=PC=), 16 bit, stores currently executing address
+  + Stack Pointer (=SP=), 8 bit, used to point to topmost level of stack
++ Stack is array of 16 16-bit values
+  + Used to store address the interpreter should return to when done with a subroutine ?not sure what this means?
+  + Allows up to 16 levels of nested subroutine
++ Display
+  + Original uses 64x32 in bottom left (0,0) to top right (63,31) format
++ Sprites
+  + Up to 15 bytes
+  + Can refer to a group of sprites representing the hex digits 0 -> F
+  + These sprites are 5 bytes long, or 8x5 pixels
+  + Stored in the interpreter area of Chip-8 memory
+*** Repr in Hare
+#+begin_src hare
+type c8memory = [4096]u8;
+type c8stack = [16]u16;
+static let mem: c8memory = [0...]; // Statically allocate Chip-8 mem and stack
+static let stack: c8stack = [0...];
+
+let program_counter: u16 = 0;
+fn increment_pc(&pc: u16) void {
+... += 2 // each instruction is 2 bytes
+}
+
+const font [16]u16 // copy paste from [[https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#font][fonts]] 
+
+#+end_src
+** To Implement
+- [X] Read CHIP-8 files
+- [X] Rendering setup for display
+- [X] Parse Op Codes
+- [ ] Manage delays and timers
+- [ ] 1-chip8-logo test rom
+  * Clear the screen
+  * Load normal register with immediate value
+  * Load i register with immediate value
+  * Draw sprite to screen (only aligned)
+  * Jump (at the end, so kinda optional)
+ 
+
+** Incrementing CPU Cycle
+We read instruction -> Run Instruction -> Increment PC by 2 -> Redraw
