@@ -67,13 +67,13 @@ fn load_rom(filename: str, cpu: *state) void = {
 		};
 		// 0x200 is 512 (End of Chip-8 Interpreter)
  		cpu.memory[0x200 + i] = byte; 
-		fmt::printfln("{}\t{:X}", 0x200 + i, byte)!;
+		// fmt::printfln("{}\t{:X}", 0x200 + i, byte)!;
 	};
 };
 
 // Increments the program counter by the default op-code length: 2
-fn increment_pc(pc: *u16) void = {
-	*pc += 2;
+fn increment_pc(cpu: *state) void = {
+	cpu.program_counter += 2;
 };
 
 fn draw() void = {
@@ -114,12 +114,13 @@ fn draw() void = {
 };
 
 @test fn increment_pc() void = {
-	let program_counter: u16 = 0;
-	increment_pc(&program_counter);
-	assert(program_counter == 2);
+	let cpu = state {...};
+	increment_pc(&cpu);
+	assert(cpu.program_counter == 2);
 
-	let program_counter: u16 = 14;
-	increment_pc(&program_counter);
-	increment_pc(&program_counter);
-	assert(program_counter == 18);
+	cpu.program_counter = 14;
+	increment_pc(&cpu);
+	increment_pc(&cpu);
+	assert(cpu.program_counter == 18);
+};
 };
