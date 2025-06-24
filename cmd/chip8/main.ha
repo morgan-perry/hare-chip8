@@ -8,46 +8,8 @@ use time;
 use bufio;
 use types;
 
-const font: [_]u8 = [
-	0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
-	0x20, 0x60, 0x20, 0x20, 0x70, // 1
-	0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
-	0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
-	0x90, 0x90, 0xF0, 0x10, 0x10, // 4
-	0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
-	0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
-	0xF0, 0x10, 0x20, 0x40, 0x40, // 7
-	0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
-	0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
-	0xF0, 0x90, 0xF0, 0x90, 0x90, // A
-	0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
-	0xF0, 0x80, 0x80, 0x80, 0xF0, // C
-	0xE0, 0x90, 0x90, 0x90, 0xE0, // D
-	0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-	0xF0, 0x80, 0xF0, 0x80, 0x80  // F
-];
-
-
-type cpu_state = struct {
-	memory: [4096]u8,
-	stack: [16]u16,
-	program_counter: u16,
-	stack_ptr: u8,
-	registers: [16]u8,
-};
-
-export fn main() void = {
-	if (len(os::args) <= 1) fmt::fatalf("Please Provide a ROM File");
-
-	let cpu = cpu_state {program_counter = 513, ...};
-	load_rom(os::args[1], &cpu);
-
-	cycle(&cpu);
-	draw();
-};
-
-type CLS = struct { x: void, }; // Clear Screen (no parameters)
-type RET = struct { x: void, }; // Return (no parameters)
+type CLS = struct { x: void, };
+type RET = struct { x: void, };
 
 type JP_ADDR = struct {
 	addr: u16,
@@ -68,11 +30,76 @@ type opcode = (
 	CLS | RET | JP_ADDR | CALL_ADDR | LD_VX_BYTE | ADD_VX_BYTE
 );
 
-type OpcodeError = !struct { raw: u16,};
+type opcodeerr = !struct { raw: u16,};
 
-// type UnknownOpcodeError = !struct {opcode: u16,}; // Stores the unknown opcode value
+type cpu_state = struct {
+	memory: [4096]u8,
+	stack: [16]u16,
+	program_counter: u16,
+	stack_ptr: u8,
+	registers: [16]u8,
+};
 
-fn decode_opcode(raw_opcode: u16) (opcode | OpcodeError) = {
+const font: [_]u8 = [
+	0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+	0x20, 0x60, 0x20, 0x20, 0x70, // 1
+	0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+	0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+	0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+	0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+	0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+	0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+	0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+	0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+	0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+	0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+	0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+	0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+	0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+	0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+];
+
+export fn main() void = {
+	if (len(os::args) <= 1) fmt::fatalf("Please Provide a ROM File");
+
+	let cpu = cpu_state {program_counter = 512, ...};
+	load_rom(os::args[1], &cpu);
+
+	cycle(&cpu);
+	draw();
+};
+
+
+fn cycle(cpu: *cpu_state) void = {
+	if (cpu.program_counter == 4096) return;
+	const raw_opcode = construct_opcode(cpu);
+	const decoded_opcode = match(decode_opcode(raw_opcode)){
+	case let op: opcode =>
+	 	yield op;
+	case let err: opcodeerr =>
+		if (err.raw == 0x0) void
+		else fmt::printfln("IDK OPCODE : {:X} : XD MEMES", err.raw)!;
+	case =>
+		fmt::fatalf("ok wtf");
+	};
+
+	const first = raw_opcode >> 12;
+
+	match (decoded_opcode) {
+	case CLS => fmt::printfln("CLS")!;
+	case => void;
+	};
+	increment_pc(cpu);
+	cycle(cpu);
+};
+
+fn construct_opcode(cpu: *cpu_state) u16 = {
+	const opcode = cpu.memory[cpu.program_counter]: u16 << 8
+	| cpu.memory[cpu.program_counter + 1]: u16;
+	return opcode;
+};
+
+fn decode_opcode(raw_opcode: u16) (opcode | opcodeerr) = {
 	const first_nibble = (raw_opcode >> 12)	& 0xF;
 	const NNN = raw_opcode & 0xFFF;
 	const NN = raw_opcode & 0xFF;
@@ -84,36 +111,11 @@ fn decode_opcode(raw_opcode: u16) (opcode | OpcodeError) = {
 		yield switch (NNN) {
 		case 0x0E0 => yield CLS{...};
 		case 0x0EE => yield RET{...};
-		case => yield OpcodeError{raw = raw_opcode,};
+		case => yield opcodeerr{raw = raw_opcode,};
 		};
 	case 0x1 => yield JP_ADDR { addr = NNN: u16 };
-	case => yield OpcodeError{raw = raw_opcode,};
+	case => yield opcodeerr{raw = raw_opcode,};
 	};
-};
-
-
-fn cycle(cpu: *cpu_state) void = {
-	const opcode = construct_opcode(cpu);
-	const first = opcode >> 12;
-	fmt::printfln("OPCODE: {:X}\nFIRST: {:X}", opcode, first)!;
-
-	switch (first) {
-	case 0x0 => {
-		switch (opcode) {
-		case 0x00E0 => fmt::printfln("CLEAR SCREEN")!;
-		case => fmt::fatalf("0x0 Opcode Parsing Issue");
-		};
-		increment_pc(cpu);
-	};
-	case => {fmt::printfln("TODO")!; return;};
-	};
-	cycle(cpu);
-};
-
-fn construct_opcode(cpu: *cpu_state) u16 = {
-	const opcode = cpu.memory[cpu.program_counter]: u16 << 8
-	| cpu.memory[cpu.program_counter + 1]: u16;
-	return opcode;
 };
 
 // Scans the Chip-8 ROM file byte by byte to supplied cpu_state
