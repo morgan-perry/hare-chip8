@@ -26,8 +26,25 @@ type ADD_VX_BYTE = struct {
 	byte: u8,
 };
 
+type DISPLAY_VX_VY_NIB = struct {
+	vx: u8,
+	vy: u8,
+	nibble: u8,
+};
+
+type LD_I = struct {
+	addr: u16,
+};
+
 type opcode = (
-	CLS | RET | JP_ADDR | CALL_ADDR | LD_VX_BYTE | ADD_VX_BYTE
+	CLS
+	| RET
+	| JP_ADDR
+	| CALL_ADDR
+	| LD_VX_BYTE
+	| ADD_VX_BYTE
+	| DISPLAY_VX_VY_NIB
+	| LD_I
 );
 
 type opcodeerr = !struct { raw: u16,};
@@ -37,7 +54,8 @@ type cpu_state = struct {
 	stack: [16]u16,
 	program_counter: u16,
 	stack_ptr: u8,
-	registers: [16]u8,
+	register: [16]u8,
+	register_i: u16,
 };
 
 const font: [_]u8 = [
@@ -60,23 +78,44 @@ const font: [_]u8 = [
 ];
 
 fn cycle(cpu: *cpu_state) void = {
-	if (cpu.program_counter == 4096) return;
+	if (cpu.program_counter > 0xFFF) return;
 	const raw_opcode = construct_opcode(cpu);
-	const decoded_opcode = match(decode_opcode(raw_opcode)){
+	const opcode = match(decode_opcode(raw_opcode)){
 	case let op: opcode =>
 	 	yield op;
 	case let err: opcodeerr =>
-		if (err.raw == 0x0) void
-		else fmt::printfln("IDK OPCODE : {:X} : XD MEMES", err.raw)!;
+		if (err.raw == 0x0) void else fmt::printfln("{:X}", err.raw)!;
+		return;
 	case =>
 		fmt::fatalf("ok wtf");
 	};
 
-	const first = raw_opcode >> 12;
-
-	match (decoded_opcode) {
-	case CLS => fmt::printfln("CLS")!;
-	case => void;
+	match (opcode) {
+	case CLS =>
+		fmt::printfln("CLS")!;
+		increment_pc(cpu);
+	case RET =>
+		fmt::printfln("RET")!;
+		increment_pc(cpu);
+	case let op: LD_VX_BYTE =>
+		fmt::printfln("LD_VX_BYTE")!;
+		cpu.register[op.vx] = op.byte & 0x00FF;
+		increment_pc(cpu);
+	case ADD_VX_BYTE =>
+		fmt::printfln("ADD_VX_BYTE")!;
+		increment_pc(cpu);
+	case let op: LD_I => 
+		fmt::printfln("LD_I: set to: {:X}", op.addr & 0x0FFF)!;
+		cpu.register_i = op.addr & 0x0FFF;
+		increment_pc(cpu);
+	case DISPLAY_VX_VY_NIB => 
+		fmt::printfln("DISPLAY_VX_VY_NIB")!;
+		increment_pc(cpu);
+	case let op: JP_ADDR => 
+		let jp_addr = op.addr & 0x0FFF + cpu.register[0]: u16;
+		fmt::printfln("JP_ADDR: to: {:X}", jp_addr)!;
+		cpu.program_counter = jp_addr;
+	case => fmt::printfln("Unknown: {:X}", raw_opcode)!;
 	};
 };
 
@@ -91,9 +130,10 @@ fn construct_opcode(cpu: *cpu_state) u16 = {
 fn decode_opcode(raw_opcode: u16) (opcode | opcodeerr) = {
 	const first_nibble = (raw_opcode >> 12)	& 0xF;
 	const NNN = raw_opcode & 0xFFF;
-	const NN = raw_opcode & 0xFF;
-	const X = (raw_opcode >> 8) & 0xF;
-	const Y = (raw_opcode >> 4) & 0xF;
+	const NN: u8 = raw_opcode: u8 & 0xFF;
+	const N: u8 = raw_opcode: u8 & 0xF;
+	const X: u8 = (raw_opcode: u8 >> 8) & 0xF;
+	const Y: u8 = (raw_opcode: u8 >> 4) & 0xF;
 
 	return switch (first_nibble) {
 	case 0x0 =>
@@ -103,13 +143,17 @@ fn decode_opcode(raw_opcode: u16) (opcode | opcodeerr) = {
 		case => yield opcodeerr{raw = raw_opcode,};
 		};
 	case 0x1 => yield JP_ADDR { addr = NNN: u16 };
+	case 0x6 => yield LD_VX_BYTE { vx = X, byte = NN};
+	case 0x8 => yield ADD_VX_BYTE { vx = X, byte = NN};
+	case 0xD => yield DISPLAY_VX_VY_NIB { vx = X, vy = Y, nibble = N};
+	case 0xA => yield LD_I{ addr = NNN,};
 	case => yield opcodeerr{raw = raw_opcode,};
 	};
 };
 
 // Scans the Chip-8 ROM file byte by byte to supplied cpu_state
 fn load_rom(filename: str, cpu: *cpu_state) void = {
-	fmt::printfln("Reading Rom!")!;
+	fmt::printfln("Loading Rom")!;
 	const input = match (os::open(filename)) {
 	case let file: io::file =>
 		yield file;
@@ -120,7 +164,7 @@ fn load_rom(filename: str, cpu: *cpu_state) void = {
 	defer io::close(input)!;
 
 	const scan = bufio::newscanner(input, types::SIZE_MAX);
-	for (let i = 1u; true; i += 1) { // NOTE: might have to do: 0u
+	for (let i = 0u; true; i += 1) {
 		const byte = match (bufio::scan_byte(&scan)!) {
 		case io::EOF =>
 			break;
@@ -131,6 +175,7 @@ fn load_rom(filename: str, cpu: *cpu_state) void = {
  		cpu.memory[0x200 + i] = byte; 
 		// fmt::printfln("{}\t{:X}", 0x200 + i, byte)!;
 	};
+	fmt::printfln("Read ROM")!;
 };
 
 // Increments the program counter by the default op-code length: 2

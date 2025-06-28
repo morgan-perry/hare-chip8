@@ -33,6 +33,8 @@ fn simulate(cpu: *cpu_state, draw: *draw_state) void = {
 	let rect = SDL_FRect { x = 0.0, y = 0.0, w = 50.0, h = 50.0, };
 
 	for (run) {
+		cycle(cpu);
+
 		for (SDL_PollEvent(&ev)) {
 			switch (ev.__type) {
 			case SDL_EVENT_QUIT => run = false;
@@ -71,7 +73,7 @@ fn draw_state_init() draw_state = {
 fn draw_state_deinit(draw: *draw_state) void = {
 	SDL_Quit();
 	SDL_DestroyTexture(draw.texture);
-	SDL_DestroyRenderer(draw.render); // Don't forget the renderer!
+	SDL_DestroyRenderer(draw.render);
 	SDL_DestroyWindow(draw.win);
 	SDL_DestroyWindow(draw.win);
 };
