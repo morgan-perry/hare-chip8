@@ -9,6 +9,9 @@ run:
 logo:
 	hare run $(LIBS) cmd/chip8 roms/chip8-test-suite/bin/1-chip8-logo.ch8
 
+ibm:
+	hare run $(LIBS) cmd/chip8 roms/chip8-test-suite/bin/2-ibm-logo.ch8
+
 build:
 	hare build $(LIBS) cmd/chip8
 
