@@ -25,12 +25,35 @@ export fn main() void = {
 	simulate(&cpu, &draw);
 };
 
+fn build_texture(cpu: *cpu_state, draw: *draw_state) void = {
+	let pixels_ptr: nullable *opaque = null;
+	let pitch: int = 0;
+	const ok = SDL_LockTexture(draw.texture, null, &pixels_ptr, &pitch);
+    	assert(ok, "SDL_LockTexture failed");
+
+   	match (pixels_ptr) {
+    	case null =>
+        	fmt::fatalf("SDL_LockTexture returned null buffer");
+    	case let raw: *opaque =>
+        	// Case from void* to uinptr then to *[]u32
+        	const pixels = (raw: uintptr) : *[2048]u32;
+
+		for (let y = 0z; y < 32; y += 1) {
+			for (let x = 0z; x < 64; x += 1) {
+            			pixels[y * 64 + x] =
+				if (cpu.display[y * 64 + x] == 1) 0xFFFFFFFF
+            			else 0x000000FF;
+			};
+		};
+    	};
+
+	SDL_UnlockTexture(draw.texture);
+};
+
 
 fn simulate(cpu: *cpu_state, draw: *draw_state) void = {
 	let run = true;
 	let ev = SDL_Event { ... };
-
-	let rect = SDL_FRect { x = 0.0, y = 0.0, w = 50.0, h = 50.0, };
 
 	for (run) {
 		cycle(cpu);
@@ -43,8 +66,13 @@ fn simulate(cpu: *cpu_state, draw: *draw_state) void = {
 		};
 
 		SDL_RenderClear(draw.render);
+
+		build_texture(cpu, draw);
+
+		let dest = SDL_FRect { x = 0.0, y = 0.0, w = 1024.0, h = 512.0};
+
 		SDL_SetRenderDrawColor(draw.render, 255, 255, 118, 255);
-		SDL_RenderFillRect(draw.render, &rect);
+		SDL_RenderTexture(draw.render, draw.texture, null, &dest);
 		SDL_SetRenderDrawColor(draw.render, 29, 31, 33, 0);
 		SDL_RenderPresent(draw.render);
 	};

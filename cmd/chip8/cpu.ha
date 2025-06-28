@@ -56,6 +56,7 @@ type cpu_state = struct {
 	stack_ptr: u8,
 	register: [16]u8,
 	register_i: u16,
+	display: [64 * 32]u8,
 };
 
 const font: [_]u8 = [
@@ -93,12 +94,13 @@ fn cycle(cpu: *cpu_state) void = {
 	match (opcode) {
 	case CLS =>
 		fmt::printfln("CLS")!;
+		for (let tile &.. cpu.display) *tile = 0x00;
 		increment_pc(cpu);
 	case RET =>
 		fmt::printfln("RET")!;
 		increment_pc(cpu);
 	case let op: LD_VX_BYTE =>
-		fmt::printfln("LD_VX_BYTE")!;
+		fmt::printfln("LD_VX_BYTE: {:X} set to: {:X}", op.vx, op.byte)!;
 		cpu.register[op.vx] = op.byte & 0x00FF;
 		increment_pc(cpu);
 	case ADD_VX_BYTE =>
@@ -108,8 +110,9 @@ fn cycle(cpu: *cpu_state) void = {
 		fmt::printfln("LD_I: set to: {:X}", op.addr & 0x0FFF)!;
 		cpu.register_i = op.addr & 0x0FFF;
 		increment_pc(cpu);
-	case DISPLAY_VX_VY_NIB => 
-		fmt::printfln("DISPLAY_VX_VY_NIB")!;
+	case let op: DISPLAY_VX_VY_NIB => 
+		fmt::printfln("DISPLAY_VX_VY_NIB: vx: {} vy: {} nib: {}",
+			op.vx, op.vy, op.nibble)!;
 		increment_pc(cpu);
 	case let op: JP_ADDR => 
 		let jp_addr = op.addr & 0x0FFF + cpu.register[0]: u16;
