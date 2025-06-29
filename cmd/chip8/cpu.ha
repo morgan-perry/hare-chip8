@@ -101,7 +101,7 @@ fn cycle(cpu: *cpu_state) void = {
 		increment_pc(cpu);
 	case let op: LD_VX_BYTE =>
 		fmt::printfln("LD_VX_BYTE: {:X} set to: {:X}", op.vx, op.byte)!;
-		cpu.register[op.vx] = op.byte & 0x00FF;
+		cpu.register[op.vx] = op.byte;
 		increment_pc(cpu);
 	case ADD_VX_BYTE =>
 		fmt::printfln("ADD_VX_BYTE")!;
@@ -149,25 +149,25 @@ fn construct_opcode(cpu: *cpu_state) u16 = {
 // Reads u16 opcode and matches it with type defined in opcode
 fn decode_opcode(raw_opcode: u16) (opcode | opcodeerr) = {
 	const first_nibble = (raw_opcode >> 12)	& 0xF;
-	const NNN: u16 = raw_opcode & 0xFFF;
-	const NN: u8 = raw_opcode: u8 & 0xFF;
-	const N: u8 = raw_opcode: u8 & 0xF;
-	const X: u8 = ((raw_opcode >>  8) & 0xF): u8;  // ← correct
-	const Y: u8 = ((raw_opcode >>  4) & 0xF): u8;  // ← correct
+	const NNN: u16 = raw_opcode & 0x0FFF;
+	const NN: u8 = raw_opcode: u8 & 0x00FF;
+	const X: u8 = ((raw_opcode & 0x0F00) >> 8): u8;
+	const Y: u8 = ((raw_opcode & 0x00F0) >> 4): u8;
+	const N: u8 = (raw_opcode & 0x000F): u8;
 
 	return switch (first_nibble) {
 	case 0x0 =>
 		yield switch (NNN) {
 		case 0x0E0 => yield CLS{...};
 		case 0x0EE => yield RET{...};
-		case => yield opcodeerr{raw = raw_opcode,};
+		case => yield opcodeerr{raw = raw_opcode};
 		};
 	case 0x1 => yield JP_ADDR { addr = NNN: u16 };
 	case 0x6 => yield LD_VX_BYTE { vx = X, byte = NN};
 	case 0x8 => yield ADD_VX_BYTE { vx = X, byte = NN};
 	case 0xD => yield DISPLAY_VX_VY_NIB { vx = X, vy = Y, nibble = N};
 	case 0xA => yield LD_I{ addr = NNN,};
-	case => yield opcodeerr{raw = raw_opcode,};
+	case => yield opcodeerr{raw = raw_opcode};
 	};
 };
 
