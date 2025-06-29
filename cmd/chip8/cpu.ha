@@ -94,7 +94,7 @@ fn cycle(cpu: *cpu_state) void = {
 	match (opcode) {
 	case CLS =>
 		fmt::printfln("CLS")!;
-		for (let tile &.. cpu.display) *tile = 0x00;
+		for (let tile .. cpu.display) tile = 0x00;
 		increment_pc(cpu);
 	case RET =>
 		fmt::printfln("RET")!;
