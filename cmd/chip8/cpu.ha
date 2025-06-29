@@ -114,20 +114,20 @@ fn cycle(cpu: *cpu_state) void = {
 		fmt::printfln("DISPLAY_VX_VY_NIB: vx: {} vy: {} nib: {}",
 			op.vx, op.vy, op.nibble)!;
 		cpu.register[0xF] = 0;
+		const registerX: u8 = cpu.register[op.vx];
+		const registerY: u8 = cpu.register[op.vy];
 		for (let y = 0z; y < op.nibble; y += 1) {
-		    const registerX: u8 = cpu.register[op.vx];
-		    const registerY: u8 = cpu.register[op.vy];
-			const spr = cpu.memory[cpu.register_i + y];
+			const sprite = cpu.memory[cpu.register_i + y];
 			for (let x = 0z; x < 8; x += 1) {
-			const v: u8 = 0x80;
-			if ((spr & (v >> (x: u8))) != 0) {
-				const tX = (registerX + x % 64): u16;
-				const tY = (registerY + y % 32): u16;
-				const idx = tX + tY * 64;
-				cpu.display[idx] ^= 1;
-				if (cpu.display[idx] == 0)
-					cpu.register[0x0F] = 1;
-			};
+				const v: u8 = 0x80;
+				if ((sprite & (v >> x)) != 0) {
+					const tX = (registerX + x) % 64;
+					const tY = (registerY + y) % 32;
+					const idx = tX + tY * 64;
+					cpu.display[idx] ^= 1;
+					if (cpu.display[idx] == 0)
+						cpu.register[0x0F] = 1;
+					};
 			};
 		};
 		increment_pc(cpu);
