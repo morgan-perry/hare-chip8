@@ -67,3 +67,8 @@ I have have found a test ROM that only uses 4 instructions, I believe this is a 
 + [X] Load i register with immediate value
 + [X] Draw sprite to screen (only aligned)
 + [X] Jump (at the end, s
+
+** DONE IBM Test ROM Opcodes to Implement
+
++ [X] 0x8xy0 =LD Vx Vy=
++ [X] 0x7xkk =ADD Vx, Byte=

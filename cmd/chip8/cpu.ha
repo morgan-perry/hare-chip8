@@ -36,6 +36,13 @@ type LD_I = struct {
 	addr: u16,
 };
 
+// 0x8nnn opcodes
+type LD_VX_VY = struct {
+	vx: u8,
+	vy: u8,
+	nibble: u8,
+};
+
 type opcode = (
 	CLS
 	| RET
@@ -44,6 +51,7 @@ type opcode = (
 	| LD_VX_BYTE
 	| ADD_VX_BYTE
 	| DISPLAY_VX_VY_NIB
+	| LD_VX_VY
 	| LD_I
 );
 
@@ -103,12 +111,13 @@ fn cycle(cpu: *cpu_state) void = {
 		fmt::printfln("LD_VX_BYTE: {:X} set to: {:X}", op.vx, op.byte)!;
 		cpu.register[op.vx] = op.byte;
 		increment_pc(cpu);
-	case ADD_VX_BYTE =>
+	case let op: ADD_VX_BYTE =>
 		fmt::printfln("ADD_VX_BYTE")!;
+		cpu.register[op.vx] += op.byte;
 		increment_pc(cpu);
 	case let op: LD_I => 
-		fmt::printfln("LD_I: set to: {:X}", op.addr & 0x0FFF)!;
-		cpu.register_i = op.addr & 0x0FFF;
+		fmt::printfln("LD_I: set to: {:X}", op.addr)!;
+		cpu.register_i = op.addr;
 		increment_pc(cpu);
 	case let op: DISPLAY_VX_VY_NIB => 
 		fmt::printfln("DISPLAY_VX_VY_NIB: vx: {} vy: {} nib: {}",
@@ -132,9 +141,18 @@ fn cycle(cpu: *cpu_state) void = {
 		};
 		increment_pc(cpu);
 	case let op: JP_ADDR => 
-		let jp_addr = op.addr & 0x0FFF + cpu.register[0]: u16;
-		fmt::printfln("JP_ADDR: to: {:X}", jp_addr)!;
-		cpu.program_counter = jp_addr;
+		fmt::printfln("JP_ADDR: to: {:X}", op.addr)!;
+		cpu.program_counter = op.addr;
+	// case let op: CALL_ADDR =>
+	// 	fmt::printfln("CALL_ADDR: to: {:X}", op.addr)!;
+	// 	increment_pc(cpu);
+	// 	cpu.stack[cpu.stack_ptr] = cpu.program_counter;
+	// 	cpu.program_counter = op.addr;
+	case let op: LD_VX_VY =>
+		fmt::printfln("LD_VX_VY: vx: {} vy: {} nib: {}",
+			op.vx, op.vy, op.nibble)!;
+		cpu.register[op.vx] = op.vy;
+		increment_pc(cpu);
 	case => fmt::printfln("Unknown: {:X}", raw_opcode)!;
 	};
 };
@@ -163,8 +181,13 @@ fn decode_opcode(raw_opcode: u16) (opcode | opcodeerr) = {
 		case => yield opcodeerr{raw = raw_opcode};
 		};
 	case 0x1 => yield JP_ADDR { addr = NNN: u16 };
+	case 0x2 => yield CALL_ADDR{ addr = NNN: u16 };
 	case 0x6 => yield LD_VX_BYTE { vx = X, byte = NN};
-	case 0x8 => yield ADD_VX_BYTE { vx = X, byte = NN};
+	case 0x7 => yield ADD_VX_BYTE { vx = X, byte = NN};
+	case 0x8 => yield switch (N) {
+		case 0x0 => yield LD_VX_VY{vx = X, vy = Y, nibble = N};
+		case => yield opcodeerr {raw = raw_opcode};
+	};
 	case 0xD => yield DISPLAY_VX_VY_NIB { vx = X, vy = Y, nibble = N};
 	case 0xA => yield LD_I{ addr = NNN,};
 	case => yield opcodeerr{raw = raw_opcode};
