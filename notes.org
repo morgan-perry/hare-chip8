@@ -58,12 +58,12 @@ const font [16]u16 // copy paste from [[https://tobiasvl.github.io/blog/write-a-
 
 We read instruction -> Run Instruction -> Increment PC by 2 -> Redraw
 
-** TODO Logo Test ROM Opcodes to Implement [3/5]
+** DONE Logo Test ROM Opcodes to Implement [5/5]
 
 I have have found a test ROM that only uses 4 instructions, I believe this is a good first step to implement some instructions and get an easy win :).
 
-+ [ ] Clear the screen
++ [X] Clear the screen
 + [X] Load normal register with immediate value
 + [X] Load i register with immediate value
-+ [ ] Draw sprite to screen (only aligned)
++ [X] Draw sprite to screen (only aligned)
 + [X] Jump (at the end, s

@@ -113,6 +113,23 @@ fn cycle(cpu: *cpu_state) void = {
 	case let op: DISPLAY_VX_VY_NIB => 
 		fmt::printfln("DISPLAY_VX_VY_NIB: vx: {} vy: {} nib: {}",
 			op.vx, op.vy, op.nibble)!;
+		cpu.register[0xF] = 0;
+		for (let y = 0z; y < op.nibble; y += 1) {
+		    const registerX: u8 = cpu.register[op.vx];
+		    const registerY: u8 = cpu.register[op.vy];
+			const spr = cpu.memory[cpu.register_i + y];
+			for (let x = 0z; x < 8; x += 1) {
+			const v: u8 = 0x80;
+			if ((spr & (v >> (x: u8))) != 0) {
+				const tX = (registerX + x % 64): u16;
+				const tY = (registerY + y % 32): u16;
+				const idx = tX + tY * 64;
+				cpu.display[idx] ^= 1;
+				if (cpu.display[idx] == 0)
+					cpu.register[0x0F] = 1;
+			};
+			};
+		};
 		increment_pc(cpu);
 	case let op: JP_ADDR => 
 		let jp_addr = op.addr & 0x0FFF + cpu.register[0]: u16;
@@ -132,11 +149,11 @@ fn construct_opcode(cpu: *cpu_state) u16 = {
 // Reads u16 opcode and matches it with type defined in opcode
 fn decode_opcode(raw_opcode: u16) (opcode | opcodeerr) = {
 	const first_nibble = (raw_opcode >> 12)	& 0xF;
-	const NNN = raw_opcode & 0xFFF;
+	const NNN: u16 = raw_opcode & 0xFFF;
 	const NN: u8 = raw_opcode: u8 & 0xFF;
 	const N: u8 = raw_opcode: u8 & 0xF;
-	const X: u8 = (raw_opcode: u8 >> 8) & 0xF;
-	const Y: u8 = (raw_opcode: u8 >> 4) & 0xF;
+	const X: u8 = ((raw_opcode >>  8) & 0xF): u8;  // ← correct
+	const Y: u8 = ((raw_opcode >>  4) & 0xF): u8;  // ← correct
 
 	return switch (first_nibble) {
 	case 0x0 =>
@@ -152,6 +169,12 @@ fn decode_opcode(raw_opcode: u16) (opcode | opcodeerr) = {
 	case 0xA => yield LD_I{ addr = NNN,};
 	case => yield opcodeerr{raw = raw_opcode,};
 	};
+};
+
+// Loads the preformatted fonts into the memory from 0x000 to 0x1FF
+fn load_font(cpu: *cpu_state) void = {
+	fmt::printfln("Loading Font")!;
+	for (let i = 0z; i < len(font); i += 1) cpu.memory[i] = font[i];
 };
 
 // Scans the Chip-8 ROM file byte by byte to supplied cpu_state
