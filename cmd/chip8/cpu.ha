@@ -87,6 +87,22 @@ type SUB_VX_VY = struct {
 	vy: u8,
 };
 
+
+type SHR_VX_VY = struct {
+	vx: u8,
+	vy: u8,
+};
+
+type SUBN_VX_VY = struct {
+	vx: u8,
+	vy: u8,
+};
+
+type SHL_VX_VY = struct {
+	vx: u8,
+	vy: u8,
+};
+
 type opcode = (
 	CLS
 	| RET
@@ -98,6 +114,10 @@ type opcode = (
 	| XOR_VX_VY
 	| ADD_VX_VY
 	| SUB_VX_VY
+	| SHR_VX_VY
+	| SHR_VX_VY
+	| SUBN_VX_VY
+	| SHL_VX_VY
 	| ADD_VX_BYTE
 	| SE_VX_BYTE
 	| SNE_VX_BYTE
@@ -211,8 +231,26 @@ fn cycle(cpu: *cpu_state) void = {
 		cpu.register[op.vx] += cpu.register[op.vy];
 		increment_pc(cpu);
 	case let op: SUB_VX_VY =>
-		fmt::printfln("ADD_VX_VY: {:X} OR {:X}", op.vx, op.vy)!;
+		fmt::printfln("SUB_VX_VY: {:X} OR {:X}", op.vx, op.vy)!;
 		cpu.register[op.vx] -= cpu.register[op.vy];
+		increment_pc(cpu);
+	case let op: SHR_VX_VY =>
+		fmt::printfln("SUB_VX_VY: {:X} SHR {:X}", op.vx, op.vy)!;
+		if (cpu.register[op.vx] & 0x0F == 1) {
+			cpu.register[0xF] = 1;
+		} else {
+			cpu.register[0xF] = 0;
+		};
+		cpu.register[op.vx] = cpu.register[op.vx] / 2;
+		increment_pc(cpu);
+	case let op: SUBN_VX_VY =>
+		fmt::printfln("SUBN_VX_VY: {:X} OR {:X}", op.vx, op.vy)!;
+		if (cpu.register[op.vy] > cpu.register[op.vx]) {
+			cpu.register[0xF] = 1;
+		} else {
+			cpu.register[0xF] = 0;
+		};
+		cpu.register[op.vx] = cpu.register[op.vy] - cpu.register[op.vx];
 		increment_pc(cpu);
 	case let op: ADD_VX_BYTE =>
 		fmt::printfln("ADD_VX_BYTE")!;
@@ -284,6 +322,9 @@ fn decode_opcode(raw_opcode: u16) (opcode | opcodeerr) = {
 		case 0x3 => yield XOR_VX_VY{ vx = X, vy = Y };
 		case 0x4 => yield ADD_VX_VY{ vx = X, vy = Y };
 		case 0x5 => yield SUB_VX_VY{ vx = X, vy = Y };
+		case 0x6 => yield SHR_VX_VY{ vx = X, vy = Y };
+		case 0x7 => yield SUBN_VX_VY{ vx = X, vy = Y };
+		case 0xE => yield SHL_VX_VY{ vx = X, vy = Y };
 		case => yield opcodeerr { raw = raw_opcode };
 	};
 	case 0x9 => yield SNE_VX_VY{ vx = X, vy = Y };
