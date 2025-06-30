@@ -107,6 +107,10 @@ type LD_VX_I = struct {
 	vx: u8,
 };
 
+type LD_I_VX = struct {
+	vx: u8,
+};
+
 type opcode = (
 	CLS
 	| RET
@@ -130,6 +134,7 @@ type opcode = (
 	| DISPLAY_VX_VY_NIB
 	| LD_VX_VY
 	| LD_I
+	| LD_I_VX
 	| LD_VX_I
 );
 
@@ -295,6 +300,12 @@ fn cycle(cpu: *cpu_state) void = {
 			};
 		};
 		increment_pc(cpu);
+	case let op: LD_I_VX =>
+		fmt::printfln("LD_I_VX: VX: {:X}", op.vx)!;
+		for (let i = 0z; i <= op.vx; i += 1) {
+			cpu.memory[cpu.register_i + i] = cpu.register[i];
+		};
+		increment_pc(cpu);
 	case let op: LD_VX_I =>
 		fmt::printfln("LD_VX_I: VX: {:X}", op.vx)!;
 		for (let i = 0z; i <= op.vx; i += 1) {
@@ -351,6 +362,7 @@ fn decode_opcode(raw_opcode: u16) (opcode | opcodeerr) = {
 	case 0xA => yield LD_I{ addr = NNN };
 	case 0xD => yield DISPLAY_VX_VY_NIB { vx = X, vy = Y, nibble = N };
 	case 0xF => yield switch (NN) {
+		case 0x55 => yield LD_I_VX { vx = X };
 		case 0x65 => yield LD_VX_I{ vx = X };
 		case => yield opcodeerr { raw = raw_opcode };
 	};
