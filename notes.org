@@ -73,7 +73,7 @@ I have have found a test ROM that only uses 4 instructions, I believe this is a 
 + [X] 0x8xy0 =LD Vx Vy=
 + [X] 0x7xkk =ADD Vx, Byte=
 
-** TODO =corax+= test ROM Opcodes to Implement [7/22]
+** TODO =corax+= test ROM Opcodes to Implement [14/22]
 
 + [X] 3xkk: SE Vx, byte
 + [X] 4xkk: SNE Vx, byte
@@ -82,13 +82,13 @@ I have have found a test ROM that only uses 4 instructions, I believe this is a 
 + [X] 9xy0: SNE Vx, Vy
 + [X] 1nnn: JP Addr
 + [X] 2nnn: CALL Addr
-+ [ ] 00EE: RET
-+ [ ] 8xy0: LD Vx, Vy
-+ [ ] 8xy1: OR Vx, Vy
-+ [ ] 8xy2: AND Vx, Vy
-+ [ ] 8xy3: XOR Vx, Vy
-+ [ ] 8xy4: ADD Vx, Vy
-+ [ ] 8xy5: SUB Vx, Vy
++ [X] 00EE: RET
++ [X] 8xy0: LD Vx, Vy
++ [X] 8xy1: OR Vx, Vy
++ [X] 8xy2: AND Vx, Vy
++ [X] 8xy3: XOR Vx, Vy
++ [X] 8xy4: ADD Vx, Vy
++ [X] 8xy5: SUB Vx, Vy
 + [ ] 8xy7: SUBN Vx, Vy
 + [ ] 8xy6: SHR Vx, {, Vy} ?why the {}?
 + [ ] 8xyE: SHl Vx {, Vy} ?probably nullability?

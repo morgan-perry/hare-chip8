@@ -60,7 +60,31 @@ type SNE_VX_VY = struct {
 type LD_VX_VY = struct {
 	vx: u8,
 	vy: u8,
-	nibble: u8,
+};
+
+type OR_VX_VY = struct {
+	vx: u8,
+	vy: u8,
+};
+
+type AND_VX_VY = struct {
+	vx: u8,
+	vy: u8,
+};
+
+type XOR_VX_VY = struct {
+	vx: u8,
+	vy: u8,
+};
+
+type ADD_VX_VY = struct {
+	vx: u8,
+	vy: u8,
+};
+
+type SUB_VX_VY = struct {
+	vx: u8,
+	vy: u8,
 };
 
 type opcode = (
@@ -69,6 +93,11 @@ type opcode = (
 	| JP_ADDR
 	| CALL_ADDR
 	| LD_VX_BYTE
+	| OR_VX_VY
+	| AND_VX_VY
+	| XOR_VX_VY
+	| ADD_VX_VY
+	| SUB_VX_VY
 	| ADD_VX_BYTE
 	| SE_VX_BYTE
 	| SNE_VX_BYTE
@@ -161,6 +190,30 @@ fn cycle(cpu: *cpu_state) void = {
 		fmt::printfln("LD_VX_BYTE: {:X} set to: {:X}", op.vx, op.byte)!;
 		cpu.register[op.vx] = op.byte;
 		increment_pc(cpu);
+	case let op: LD_VX_VY =>
+		fmt::printfln("LD_VX_VY: vx: {} vy: {}", op.vx, op.vy)!;
+		cpu.register[op.vx] = cpu.register[op.vy];
+		increment_pc(cpu);
+	case let op: OR_VX_VY =>
+		fmt::printfln("OR_VX_VY: {:X} OR {:X}", op.vx, op.vy)!;
+		cpu.register[op.vx] = cpu.register[op.vx] | cpu.register[op.vy];
+		increment_pc(cpu);
+	case let op: AND_VX_VY =>
+		fmt::printfln("ADD_VX_VY: {:X} OR {:X}", op.vx, op.vy)!;
+		cpu.register[op.vx] = cpu.register[op.vx] & cpu.register[op.vy];
+		increment_pc(cpu);
+	case let op: XOR_VX_VY =>
+		fmt::printfln("XOR_VX_VY: {:X} OR {:X}", op.vx, op.vy)!;
+		cpu.register[op.vx] = cpu.register[op.vx] ^ cpu.register[op.vy];
+		increment_pc(cpu);
+	case let op: ADD_VX_VY =>
+		fmt::printfln("ADD_VX_VY: {:X} OR {:X}", op.vx, op.vy)!;
+		cpu.register[op.vx] += cpu.register[op.vy];
+		increment_pc(cpu);
+	case let op: SUB_VX_VY =>
+		fmt::printfln("ADD_VX_VY: {:X} OR {:X}", op.vx, op.vy)!;
+		cpu.register[op.vx] -= cpu.register[op.vy];
+		increment_pc(cpu);
 	case let op: ADD_VX_BYTE =>
 		fmt::printfln("ADD_VX_BYTE")!;
 		cpu.register[op.vx] += op.byte;
@@ -189,11 +242,6 @@ fn cycle(cpu: *cpu_state) void = {
 					};
 			};
 		};
-		increment_pc(cpu);
-	case let op: LD_VX_VY =>
-		fmt::printfln("LD_VX_VY: vx: {} vy: {} nib: {}",
-			op.vx, op.vy, op.nibble)!;
-		cpu.register[op.vx] = op.vy;
 		increment_pc(cpu);
 	case => fmt::printfln("Unknown: {:X}", raw_opcode)!;
 	};
@@ -230,7 +278,12 @@ fn decode_opcode(raw_opcode: u16) (opcode | opcodeerr) = {
 	case 0x6 => yield LD_VX_BYTE { vx = X, byte = NN };
 	case 0x7 => yield ADD_VX_BYTE { vx = X, byte = NN };
 	case 0x8 => yield switch (N) {
-		case 0x0 => yield LD_VX_VY{ vx = X, vy = Y, nibble = N };
+		case 0x0 => yield LD_VX_VY{ vx = X, vy = Y };
+		case 0x1 => yield OR_VX_VY{ vx = X, vy = Y };
+		case 0x2 => yield AND_VX_VY{ vx = X, vy = Y };
+		case 0x3 => yield XOR_VX_VY{ vx = X, vy = Y };
+		case 0x4 => yield ADD_VX_VY{ vx = X, vy = Y };
+		case 0x5 => yield SUB_VX_VY{ vx = X, vy = Y };
 		case => yield opcodeerr { raw = raw_opcode };
 	};
 	case 0x9 => yield SNE_VX_VY{ vx = X, vy = Y };
