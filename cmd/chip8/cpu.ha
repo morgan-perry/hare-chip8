@@ -235,13 +235,22 @@ fn cycle(cpu: *cpu_state) void = {
 		cpu.register[op.vx] -= cpu.register[op.vy];
 		increment_pc(cpu);
 	case let op: SHR_VX_VY =>
-		fmt::printfln("SUB_VX_VY: {:X} SHR {:X}", op.vx, op.vy)!;
+		fmt::printfln("SHR_VX_VY: {:X} SHR {:X}", op.vx, op.vy)!;
 		if (cpu.register[op.vx] & 0x0F == 1) {
 			cpu.register[0xF] = 1;
 		} else {
 			cpu.register[0xF] = 0;
 		};
-		cpu.register[op.vx] = cpu.register[op.vx] / 2;
+		cpu.register[op.vx] /= 2;
+		increment_pc(cpu);
+	case let op: SHL_VX_VY =>
+		fmt::printfln("SHL_VX_VY: {:X} SHL {:X}", op.vx, op.vy)!;
+		if (cpu.register[op.vx] & 0x0F == 1) {
+			cpu.register[0xF] = 1;
+		} else {
+			cpu.register[0xF] = 0;
+		};
+		cpu.register[op.vx] *= 2;
 		increment_pc(cpu);
 	case let op: SUBN_VX_VY =>
 		fmt::printfln("SUBN_VX_VY: {:X} OR {:X}", op.vx, op.vy)!;
