@@ -103,6 +103,10 @@ type SHL_VX_VY = struct {
 	vy: u8,
 };
 
+type LD_ST_VX= struct {
+	vx: u8,
+};
+
 type LD_B_VX = struct {
 	vx: u8,
 };
@@ -139,6 +143,7 @@ type opcode = (
 	| DISPLAY_VX_VY_NIB
 	| LD_VX_VY
 	| LD_I
+	| LD_ST_VX
 	| LD_B_VX
 	| LD_I_VX
 	| LD_VX_I
@@ -154,6 +159,8 @@ type cpu_state = struct {
 	register: [16]u8,
 	register_i: u16,
 	display: [64 * 32]u8,
+	sound_timer: u16,
+	delay_timer: u16,
 };
 
 const font: [_]u8 = [
@@ -306,6 +313,10 @@ fn cycle(cpu: *cpu_state) void = {
 			};
 		};
 		increment_pc(cpu);
+	case let op: LD_ST_VX =>
+		fmt::printfln("LD_ST_VX: VX: {:X}", op.vx)!;
+		cpu.sound_timer = cpu.register[op.vx];
+		increment_pc(cpu);
 	case let op: LD_B_VX =>
 		fmt::printfln("LD_B_VX: VX: {:X}", op.vx)!;
 		cpu.memory[cpu.register_i] = cpu.register[op.vx] / 100 % 10;
@@ -374,6 +385,7 @@ fn decode_opcode(raw_opcode: u16) (opcode | opcodeerr) = {
 	case 0xA => yield LD_I{ addr = NNN };
 	case 0xD => yield DISPLAY_VX_VY_NIB { vx = X, vy = Y, nibble = N };
 	case 0xF => yield switch (NN) {
+		case 0x1E => yield LD_ST_VX { vx = X };
 		case 0x33 => yield LD_B_VX { vx = X };
 		case 0x55 => yield LD_I_VX { vx = X };
 		case 0x65 => yield LD_VX_I{ vx = X };
