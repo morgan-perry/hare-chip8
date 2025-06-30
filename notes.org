@@ -68,7 +68,32 @@ I have have found a test ROM that only uses 4 instructions, I believe this is a 
 + [X] Draw sprite to screen (only aligned)
 + [X] Jump (at the end, s
 
-** DONE IBM Test ROM Opcodes to Implement
+** DONE IBM Test ROM Opcodes to Implement [2/2]
 
 + [X] 0x8xy0 =LD Vx Vy=
 + [X] 0x7xkk =ADD Vx, Byte=
+
+** TODO =corax+= test ROM Opcodes to Implement [4/22]
+
++ [X] 3xkk: SE Vx, byte
++ [X] 4xkk: SNE Vx, byte
++ [X] 5xy0: SE Vx, Vy
++ [X] 7xkk: Add Vx, byte
++ [ ] 9xy0: SNE Vx, Vy
++ [ ] 1nnn: JP Addr
++ [ ] 2nnn: CALL Addr
++ [ ] 00EE: RET
++ [ ] 8xy0: LD Vx, Vy
++ [ ] 8xy1: OR Vx, Vy
++ [ ] 8xy2: AND Vx, Vy
++ [ ] 8xy3: XOR Vx, Vy
++ [ ] 8xy4: ADD Vx, Vy
++ [ ] 8xy5: SUB Vx, Vy
++ [ ] 8xy7: SUBN Vx, Vy
++ [ ] 8xy6: SHR Vx, {, Vy} ?why the {}?
++ [ ] 8xyE: SHl Vx {, Vy} ?probably nullability?
++ [ ] Fx65: LD Vx, [I]
++ [ ] Fx55: LD [I], Vx
++ [ ] Fx33: LD B, Vx
++ [ ] Fx1E: ADD I, Vx
++ [ ] Registers
