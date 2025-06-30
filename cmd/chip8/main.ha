@@ -56,7 +56,7 @@ fn build_texture(cpu: *cpu_state, draw: *draw_state) void = {
 fn simulate(cpu: *cpu_state, draw: *draw_state) void = {
 	let run = true;
 	let ev = SDL_Event { ... };
-	const sleep_duration: time::duration = time::MILLISECOND*50;
+	const sleep_duration: time::duration = time::MILLISECOND*10;
 
 	for (run) {
 		cycle(cpu);
