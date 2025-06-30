@@ -56,10 +56,18 @@ fn build_texture(cpu: *cpu_state, draw: *draw_state) void = {
 fn simulate(cpu: *cpu_state, draw: *draw_state) void = {
 	let run = true;
 	let ev = SDL_Event { ... };
-	const sleep_duration: time::duration = time::MILLISECOND*10;
+	let last_cycle_time = time::now(time::clock::MONOTONIC);
 
 	for (run) {
+		let now = time::now(time::clock::MONOTONIC);
+		let dt = time::diff(last_cycle_time, now);
+
+		if (dt > time::MILLISECOND*10) {
+		last_cycle_time = now;
 		cycle(cpu);
+
+		if (cpu.delay_timer > 0) cpu.delay_timer -= 1;
+		if (cpu.sound_timer> 0) cpu.sound_timer -= 1;
 
 		for (SDL_PollEvent(&ev)) {
 			switch (ev.__type) {
@@ -74,7 +82,8 @@ fn simulate(cpu: *cpu_state, draw: *draw_state) void = {
 		SDL_RenderTexture(draw.render, draw.texture, null, &dest);
 		SDL_RenderPresent(draw.render);
 
-		time::sleep(sleep_duration);
+		time::sleep(time::MILLISECOND);
+		};
 	};
 };
 
