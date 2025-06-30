@@ -215,7 +215,6 @@ fn cycle(cpu: *cpu_state) void = {
 		cpu.program_counter += 1;
 		cpu.program_counter = op.addr;
 	case let op: JP_ADDR =>
-		fmt::printfln("JP_ADDR: to: {:X}", op.addr)!;
 		cpu.program_counter = op.addr;
 	case let op: SE_VX_BYTE =>
 		fmt::printfln("SE_VX_BYTE: vx: {:X} to: {:X}", op.vx, op.byte)!;
