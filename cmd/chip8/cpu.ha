@@ -129,12 +129,14 @@ fn cycle(cpu: *cpu_state) void = {
 		for (let tile .. cpu.display) tile = 0x00;
 		increment_pc(cpu);
 	case RET =>
-		fmt::printfln("RET")!;
+		fmt::printfln("RET: stack_ptr: {:X}", cpu.stack_ptr)!;
+		cpu.program_counter = cpu.stack[cpu.stack_ptr];
+		cpu.stack_ptr =- 1;
 		increment_pc(cpu);
 	case let op: CALL_ADDR =>
-		fmt::printfln("CALL_ADDR: to: {:X}", op.addr)!;
-		cpu.program_counter += 1;
+		fmt::printfln("CALL_ADDR: addr: {:X}", op.addr)!;
 		cpu.stack[cpu.stack_ptr] = cpu.program_counter;
+		cpu.program_counter += 1;
 		cpu.program_counter = op.addr;
 	case let op: JP_ADDR =>
 		fmt::printfln("JP_ADDR: to: {:X}", op.addr)!;
