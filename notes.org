@@ -73,7 +73,7 @@ I have have found a test ROM that only uses 4 instructions, I believe this is a 
 + [X] 0x8xy0 =LD Vx Vy=
 + [X] 0x7xkk =ADD Vx, Byte=
 
-** TODO =corax+= test ROM Opcodes to Implement [19/22]
+** TODO =corax+= test ROM Opcodes to Implement [20/22]
 
 + [X] 3xkk: SE Vx, byte
 + [X] 4xkk: SNE Vx, byte
@@ -94,6 +94,6 @@ I have have found a test ROM that only uses 4 instructions, I believe this is a 
 + [X] 8xyE: SHl Vx {, Vy}
 + [X] Fx65: LD Vx, [I]
 + [X] Fx55: LD [I], Vx
-+ [ ] Fx33: LD B, Vx
++ [X] Fx33: LD B, Vx
 + [ ] Fx1E: ADD I, Vx
 + [ ] Registers
