@@ -296,7 +296,8 @@ fn cycle(cpu: *cpu_state) void = {
 		};
 		increment_pc(cpu);
 	case let op: LD_VX_I =>
-		for (let i = 0z; i < op.vx; i += 1) {
+		fmt::printfln("LD_VX_I: VX: {:X}", op.vx)!;
+		for (let i = 0z; i <= op.vx; i += 1) {
 			cpu.register[i] = cpu.memory[cpu.register_i + i];
 		};
 		increment_pc(cpu);
