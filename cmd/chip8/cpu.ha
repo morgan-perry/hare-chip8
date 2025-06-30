@@ -73,6 +73,7 @@ type opcode = (
 	| SE_VX_BYTE
 	| SNE_VX_BYTE
 	| SE_VX_VY
+	| SNE_VX_VY
 	| DISPLAY_VX_VY_NIB
 	| LD_VX_VY
 	| LD_I
@@ -135,17 +136,21 @@ fn cycle(cpu: *cpu_state) void = {
 	// 	increment_pc(cpu);
 	// 	cpu.stack[cpu.stack_ptr] = cpu.program_counter;
 	// 	cpu.program_counter = op.addr;
+	case let op: JP_ADDR =>
+		fmt::printfln("JP_ADDR: to: {:X}", op.addr)!;
+		cpu.program_counter = op.addr;
 	case let op: SE_VX_BYTE =>
 		fmt::printfln("SE_VX_BYTE: vx: {:X} to: {:X}", op.vx, op.byte)!;
-		if (op.vx == op.byte) increment_pc(cpu);
+		if (cpu.register[op.vx] == op.byte) increment_pc(cpu);
 		increment_pc(cpu);
 	case let op: SNE_VX_BYTE =>
 		fmt::printfln("SNE_VX_BYTE: vx: {:X} to: {:X}", op.vx, op.byte)!;
-		if (op.vx != op.byte) increment_pc(cpu);
+		if (cpu.register[op.vx] != op.byte) increment_pc(cpu);
 		increment_pc(cpu);
 	case let op: SE_VX_VY =>
 		fmt::printfln("SE_VX_BYTE: vx: {:X} vy: {:X}", op.vx, op.vy)!;
-		if (op.vx != op.vy) increment_pc(cpu);
+		if (cpu.register[op.vx] == cpu.register[op.vy]) increment_pc(cpu);
+		increment_pc(cpu);
 	case let op: SNE_VX_VY =>
 		fmt::printfln("SNE_VX_BYTE: vx: {:X} vy: {:X}", op.vx, op.vy)!;
 		if (cpu.register[op.vx] != cpu.register[op.vy]) increment_pc(cpu);
@@ -183,9 +188,6 @@ fn cycle(cpu: *cpu_state) void = {
 			};
 		};
 		increment_pc(cpu);
-	case let op: JP_ADDR => 
-		fmt::printfln("JP_ADDR: to: {:X}", op.addr)!;
-		cpu.program_counter = op.addr;
 	case let op: LD_VX_VY =>
 		fmt::printfln("LD_VX_VY: vx: {} vy: {} nib: {}",
 			op.vx, op.vy, op.nibble)!;
@@ -229,6 +231,7 @@ fn decode_opcode(raw_opcode: u16) (opcode | opcodeerr) = {
 		case 0x0 => yield LD_VX_VY{ vx = X, vy = Y, nibble = N };
 		case => yield opcodeerr { raw = raw_opcode };
 	};
+	case 0x9 => yield SNE_VX_VY{ vx = X, vy = Y };
 	case 0xD => yield DISPLAY_VX_VY_NIB { vx = X, vy = Y, nibble = N };
 	case 0xA => yield LD_I{ addr = NNN };
 	case => yield opcodeerr{ raw = raw_opcode };

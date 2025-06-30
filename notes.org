@@ -73,15 +73,15 @@ I have have found a test ROM that only uses 4 instructions, I believe this is a 
 + [X] 0x8xy0 =LD Vx Vy=
 + [X] 0x7xkk =ADD Vx, Byte=
 
-** TODO =corax+= test ROM Opcodes to Implement [4/22]
+** TODO =corax+= test ROM Opcodes to Implement [6/22]
 
 + [X] 3xkk: SE Vx, byte
 + [X] 4xkk: SNE Vx, byte
 + [X] 5xy0: SE Vx, Vy
 + [X] 7xkk: Add Vx, byte
-+ [ ] 9xy0: SNE Vx, Vy
++ [X] 9xy0: SNE Vx, Vy
 + [ ] 1nnn: JP Addr
-+ [ ] 2nnn: CALL Addr
++ [X] 2nnn: CALL Addr
 + [ ] 00EE: RET
 + [ ] 8xy0: LD Vx, Vy
 + [ ] 8xy1: OR Vx, Vy
