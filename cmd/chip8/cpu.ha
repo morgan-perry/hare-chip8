@@ -219,19 +219,19 @@ fn cycle(cpu: *cpu_state) void = {
 		cpu.register[op.vx] = cpu.register[op.vx] | cpu.register[op.vy];
 		increment_pc(cpu);
 	case let op: AND_VX_VY =>
-		fmt::printfln("ADD_VX_VY: {:X} OR {:X}", op.vx, op.vy)!;
+		fmt::printfln("ADD_VX_VY: {:X} AND {:X}", op.vx, op.vy)!;
 		cpu.register[op.vx] = cpu.register[op.vx] & cpu.register[op.vy];
 		increment_pc(cpu);
 	case let op: XOR_VX_VY =>
-		fmt::printfln("XOR_VX_VY: {:X} OR {:X}", op.vx, op.vy)!;
+		fmt::printfln("XOR_VX_VY: {:X} XOR {:X}", op.vx, op.vy)!;
 		cpu.register[op.vx] = cpu.register[op.vx] ^ cpu.register[op.vy];
 		increment_pc(cpu);
 	case let op: ADD_VX_VY =>
-		fmt::printfln("ADD_VX_VY: {:X} OR {:X}", op.vx, op.vy)!;
+		fmt::printfln("ADD_VX_VY: {:X} ADD {:X}", op.vx, op.vy)!;
 		cpu.register[op.vx] += cpu.register[op.vy];
 		increment_pc(cpu);
 	case let op: SUB_VX_VY =>
-		fmt::printfln("SUB_VX_VY: {:X} OR {:X}", op.vx, op.vy)!;
+		fmt::printfln("SUB_VX_VY: {:X} SUB {:X}", op.vx, op.vy)!;
 		cpu.register[op.vx] -= cpu.register[op.vy];
 		increment_pc(cpu);
 	case let op: SHR_VX_VY =>

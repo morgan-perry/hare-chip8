@@ -90,8 +90,8 @@ I have have found a test ROM that only uses 4 instructions, I believe this is a 
 + [X] 8xy4: ADD Vx, Vy
 + [X] 8xy5: SUB Vx, Vy
 + [X] 8xy7: SUBN Vx, Vy
-+ [X] 8xy6: SHR Vx, {, Vy} ?why the {}?
-+ [ ] 8xyE: SHl Vx {, Vy} ?probably nullability?
++ [X] 8xy6: SHR Vx, {, Vy}
++ [ ] 8xyE: SHl Vx {, Vy}
 + [ ] Fx65: LD Vx, [I]
 + [ ] Fx55: LD [I], Vx
 + [ ] Fx33: LD B, Vx
