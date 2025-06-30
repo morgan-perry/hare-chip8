@@ -51,6 +51,11 @@ type SE_VX_VY = struct {
 	vy: u8
 };
 
+type SNE_VX_VY = struct {
+	vx: u8,
+	vy: u8
+};
+
 // 0x8nnn opcodes
 type LD_VX_VY = struct {
 	vx: u8,
@@ -141,6 +146,9 @@ fn cycle(cpu: *cpu_state) void = {
 	case let op: SE_VX_VY =>
 		fmt::printfln("SE_VX_BYTE: vx: {:X} vy: {:X}", op.vx, op.vy)!;
 		if (op.vx != op.vy) increment_pc(cpu);
+	case let op: SNE_VX_VY =>
+		fmt::printfln("SNE_VX_BYTE: vx: {:X} vy: {:X}", op.vx, op.vy)!;
+		if (cpu.register[op.vx] != cpu.register[op.vy]) increment_pc(cpu);
 		increment_pc(cpu);
 	case let op: LD_VX_BYTE =>
 		fmt::printfln("LD_VX_BYTE: {:X} set to: {:X}", op.vx, op.byte)!;
