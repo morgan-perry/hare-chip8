@@ -131,11 +131,11 @@ fn cycle(cpu: *cpu_state) void = {
 	case RET =>
 		fmt::printfln("RET")!;
 		increment_pc(cpu);
-	// case let op: CALL_ADDR =>
-	// 	fmt::printfln("CALL_ADDR: to: {:X}", op.addr)!;
-	// 	increment_pc(cpu);
-	// 	cpu.stack[cpu.stack_ptr] = cpu.program_counter;
-	// 	cpu.program_counter = op.addr;
+	case let op: CALL_ADDR =>
+		fmt::printfln("CALL_ADDR: to: {:X}", op.addr)!;
+		cpu.program_counter += 1;
+		cpu.stack[cpu.stack_ptr] = cpu.program_counter;
+		cpu.program_counter = op.addr;
 	case let op: JP_ADDR =>
 		fmt::printfln("JP_ADDR: to: {:X}", op.addr)!;
 		cpu.program_counter = op.addr;
