@@ -103,6 +103,10 @@ type SHL_VX_VY = struct {
 	vy: u8,
 };
 
+type LD_VX_I = struct {
+	vx: u8,
+};
+
 type opcode = (
 	CLS
 	| RET
@@ -126,6 +130,7 @@ type opcode = (
 	| DISPLAY_VX_VY_NIB
 	| LD_VX_VY
 	| LD_I
+	| LD_VX_I
 );
 
 type opcodeerr = !struct { raw: u16,};
@@ -290,6 +295,11 @@ fn cycle(cpu: *cpu_state) void = {
 			};
 		};
 		increment_pc(cpu);
+	case let op: LD_VX_I =>
+		for (let i = 0z; i < op.vx; i += 1) {
+			cpu.register[i] = cpu.memory[cpu.register_i + i];
+		};
+		increment_pc(cpu);
 	case => fmt::printfln("Unknown: {:X}", raw_opcode)!;
 	};
 };
@@ -337,8 +347,12 @@ fn decode_opcode(raw_opcode: u16) (opcode | opcodeerr) = {
 		case => yield opcodeerr { raw = raw_opcode };
 	};
 	case 0x9 => yield SNE_VX_VY{ vx = X, vy = Y };
-	case 0xD => yield DISPLAY_VX_VY_NIB { vx = X, vy = Y, nibble = N };
 	case 0xA => yield LD_I{ addr = NNN };
+	case 0xD => yield DISPLAY_VX_VY_NIB { vx = X, vy = Y, nibble = N };
+	case 0xF => yield switch (NN) {
+		case 0x65 => yield LD_VX_I{ vx = X };
+		case => yield opcodeerr { raw = raw_opcode };
+	};
 	case => yield opcodeerr{ raw = raw_opcode };
 	};
 };
