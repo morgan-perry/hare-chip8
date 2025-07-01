@@ -202,7 +202,7 @@ fn cycle(cpu: *cpu_state) void = {
 	match (opcode) {
 	case CLS =>
 		fmt::printfln("CLS")!;
-		for (let tile .. cpu.display) tile = 0x00;
+		for (let tile &.. cpu.display) *tile = 0x0;
 		increment_pc(cpu);
 	case RET =>
 		fmt::printfln("RET: stack_ptr: {:X}", cpu.stack_ptr)!;
