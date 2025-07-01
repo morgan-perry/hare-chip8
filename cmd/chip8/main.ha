@@ -62,7 +62,7 @@ fn simulate(cpu: *cpu_state, draw: *draw_state) void = {
 		let now = time::now(time::clock::MONOTONIC);
 		let dt = time::diff(last_cycle_time, now);
 
-		if (dt > time::MILLISECOND*10) {
+		if (dt > time::MILLISECOND) {
 		last_cycle_time = now;
 		cycle(cpu);
 

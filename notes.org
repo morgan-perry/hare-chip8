@@ -97,3 +97,5 @@ I have have found a test ROM that only uses 4 instructions, I believe this is a 
 + [X] Fx33: LD B, Vx
 + [X] Fx1E: ADD I, Vx
 + [X] Registers
+
+** DONE Pass Flags test

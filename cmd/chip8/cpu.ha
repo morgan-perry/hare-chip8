@@ -206,13 +206,12 @@ fn cycle(cpu: *cpu_state) void = {
 		increment_pc(cpu);
 	case RET =>
 		fmt::printfln("RET: stack_ptr: {:X}", cpu.stack_ptr)!;
+		cpu.stack_ptr -= 1;
 		cpu.program_counter = cpu.stack[cpu.stack_ptr];
-		cpu.stack_ptr =- 1;
-		increment_pc(cpu);
 	case let op: CALL_ADDR =>
 		fmt::printfln("CALL_ADDR: addr: {:X}", op.addr)!;
-		cpu.stack[cpu.stack_ptr] = cpu.program_counter;
-		cpu.program_counter += 1;
+		cpu.stack[cpu.stack_ptr] = cpu.program_counter + 2;
+		cpu.stack_ptr += 1;
 		cpu.program_counter = op.addr;
 	case let op: JP_ADDR =>
 		cpu.program_counter = op.addr;
@@ -254,42 +253,55 @@ fn cycle(cpu: *cpu_state) void = {
 		increment_pc(cpu);
 	case let op: ADD_VX_VY =>
 		fmt::printfln("ADD_VX_VY: {:X} ADD {:X}", op.vx, op.vy)!;
-		cpu.register[op.vx] += cpu.register[op.vy];
+		// Must cast each register to u16 instead of sum as otherwise addition will
+		// treat is as two u8's
+		const sum = cpu.register[op.vx]: u16 + cpu.register[op.vy]: u16;
+		cpu.register[op.vx] = sum: u8;
+		cpu.register[0xF] = if (sum > 255) 1 else 0;
 		increment_pc(cpu);
 	case let op: SUB_VX_VY =>
 		fmt::printfln("SUB_VX_VY: {:X} SUB {:X}", op.vx, op.vy)!;
+		// This is to pass both second -> fourth checkmark on flags ROM
+		const old_vx = cpu.register[op.vx];
 		cpu.register[op.vx] -= cpu.register[op.vy];
+		cpu.register[0xF] = if (old_vx > cpu.register[op.vx]) 1 else 0;
 		increment_pc(cpu);
 	case let op: SHR_VX_VY =>
+		// This is an ambiguous instruction, we are targeting regular CHIP-8, so CHIP-48
+		// and SUPER-CHIP must be implemented differently Detailed here:
+		// https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#8xy6-and-8xye-shift
 		fmt::printfln("SHR_VX_VY: {:X} SHR {:X}", op.vx, op.vy)!;
-		if (cpu.register[op.vx] & 0x0F == 1) {
-			cpu.register[0xF] = 1;
-		} else {
-			cpu.register[0xF] = 0;
-		};
-		cpu.register[op.vx] /= 2;
+		// The optional part is to set vx to the value of vy, this was present on the
+		// original COSMAC VIP
+		cpu.register[op.vx] = cpu.register[op.vy];
+		const old_vx = cpu.register[op.vx];
+		cpu.register[op.vx] >>= 1;
+		cpu.register[0xF] = old_vx & 1;
 		increment_pc(cpu);
 	case let op: SHL_VX_VY =>
+		// This is the other ambiguous instruction, similar to SHR_VX_VY
 		fmt::printfln("SHL_VX_VY: {:X} SHL {:X}", op.vx, op.vy)!;
-		if (cpu.register[op.vx] & 0x0F == 1) {
-			cpu.register[0xF] = 1;
-		} else {
-			cpu.register[0xF] = 0;
-		};
-		cpu.register[op.vx] *= 2;
+		cpu.register[op.vx] = cpu.register[op.vy];
+		const old_vx = cpu.register[op.vx];
+		cpu.register[op.vx] <<= 1;
+		cpu.register[0xF] = (old_vx >> 7) & 1;
 		increment_pc(cpu);
 	case let op: SUBN_VX_VY =>
 		fmt::printfln("SUBN_VX_VY: {:X} OR {:X}", op.vx, op.vy)!;
-		if (cpu.register[op.vy] > cpu.register[op.vx]) {
-			cpu.register[0xF] = 1;
-		} else {
-			cpu.register[0xF] = 0;
-		};
 		cpu.register[op.vx] = cpu.register[op.vy] - cpu.register[op.vx];
+		cpu.register[0xF] =
+			if (cpu.register[op.vy] >= cpu.register[op.vx]) 1 else 0;
 		increment_pc(cpu);
 	case let op: ADD_VX_BYTE =>
 		fmt::printfln("ADD_VX_BYTE")!;
-		cpu.register[op.vx] += op.byte;
+		const sum: u16 = cpu.register[op.vx] + op.byte;
+		if (sum > 255) {
+			cpu.register[0xF] = 1;
+		}
+		 else {
+			cpu.register[0xF] = 0;
+		};
+		cpu.register[op.vx] = sum: u8;
 		increment_pc(cpu);
 	case let op: LD_I => 
 		fmt::printfln("LD_I: set to: {:X}", op.addr)!;
@@ -310,8 +322,9 @@ fn cycle(cpu: *cpu_state) void = {
 					const tY = (registerY + y) % 32;
 					const idx = tX + tY * 64;
 					cpu.display[idx] ^= 1;
+					// NOTE: This might be wrong
 					if (cpu.display[idx] == 0)
-						cpu.register[0x0F] = 1;
+						cpu.register[0xF] = 1;
 					};
 			};
 		};
@@ -339,7 +352,7 @@ fn cycle(cpu: *cpu_state) void = {
 		};
 		increment_pc(cpu);
 	case let op: ADD_I_VX =>
-		fmt::printfln("ADD_I_VX: VX: {:X}, op.vx", op.vx)!;
+		fmt::printfln("ADD_I_VX: VX: {:X}", op.vx)!;
 		cpu.register_i += cpu.register[op.vx];
 		increment_pc(cpu);
 	case => fmt::printfln("Unknown: {:X}", raw_opcode)!;
