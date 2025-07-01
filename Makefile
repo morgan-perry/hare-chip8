@@ -18,6 +18,9 @@ corax:
 flags:
 	hare run $(LIBS) cmd/chip8 roms/chip8-test-suite/bin/4-flags.ch8
 
+keys:
+	hare run $(LIBS) cmd/chip8 roms/chip8-test-suite/bin/6-keypad.ch8
+
 build:
 	hare build $(LIBS) cmd/chip8
 

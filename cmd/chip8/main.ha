@@ -15,6 +15,25 @@ type draw_state = struct {
 	texture: *SDL_Texture,
 };
 
+const keymap: [_]int = [
+    SDL_SCANCODE_X,
+    SDL_SCANCODE_1,
+    SDL_SCANCODE_2,
+    SDL_SCANCODE_3,
+    SDL_SCANCODE_Q,
+    SDL_SCANCODE_W,
+    SDL_SCANCODE_E,
+    SDL_SCANCODE_A,
+    SDL_SCANCODE_S,
+    SDL_SCANCODE_D,
+    SDL_SCANCODE_Z,
+    SDL_SCANCODE_C,
+    SDL_SCANCODE_4,
+    SDL_SCANCODE_R,
+    SDL_SCANCODE_F,
+    SDL_SCANCODE_V,
+];
+
 export fn main() void = {
 	if (len(os::args) <= 1) fmt::fatalf("Please Provide a ROM File");
 
@@ -52,6 +71,24 @@ fn build_texture(cpu: *cpu_state, draw: *draw_state) void = {
 	SDL_UnlockTexture(draw.texture);
 };
 
+fn process_inputs(ev: *SDL_Event, cpu: *cpu_state, run: *bool) void = {
+	for (SDL_PollEvent(ev)) switch (ev.__type) {
+		case SDL_EVENT_QUIT => *run = false;
+		case SDL_EVENT_KEY_DOWN =>
+		if (ev.key.scancode: int == SDL_SCANCODE_ESCAPE)
+			*run = false;
+		for (let i = 0z; i < len(keymap); i += 1) {
+			if (ev.key.scancode == keymap[i]: SDL_Scancode)
+				cpu.keys[i] = 1;
+		};
+		case SDL_EVENT_KEY_UP =>
+		for (let i = 0z; i < len(keymap); i += 1) {
+			if (ev.key.scancode == keymap[i]: SDL_Scancode)
+				cpu.keys[i] = 0;
+		};
+		case => continue;
+	};
+};
 
 fn simulate(cpu: *cpu_state, draw: *draw_state) void = {
 	let run = true;
@@ -62,19 +99,12 @@ fn simulate(cpu: *cpu_state, draw: *draw_state) void = {
 		let now = time::now(time::clock::MONOTONIC);
 		let dt = time::diff(last_cycle_time, now);
 
-		if (dt > time::MILLISECOND) {
+		process_inputs(&ev, cpu, &run);
 		last_cycle_time = now;
 		cycle(cpu);
 
 		if (cpu.delay_timer > 0) cpu.delay_timer -= 1;
-		if (cpu.sound_timer> 0) cpu.sound_timer -= 1;
-
-		for (SDL_PollEvent(&ev)) {
-			switch (ev.__type) {
-			case SDL_EVENT_QUIT => run = false;
-			case => continue;
-			};
-		};
+		if (cpu.sound_timer > 0) cpu.sound_timer -= 1;
 
 		SDL_RenderClear(draw.render);
 		build_texture(cpu, draw);
@@ -82,8 +112,7 @@ fn simulate(cpu: *cpu_state, draw: *draw_state) void = {
 		SDL_RenderTexture(draw.render, draw.texture, null, &dest);
 		SDL_RenderPresent(draw.render);
 
-		time::sleep(time::MILLISECOND);
-		};
+		time::sleep(time::MILLISECOND * 1);
 	};
 };
 

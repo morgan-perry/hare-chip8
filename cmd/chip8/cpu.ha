@@ -103,6 +103,26 @@ type SHL_VX_VY = struct {
 	vy: u8,
 };
 
+type GET_KEY_VX = struct {
+	vx: u8,
+};
+
+type SKP_KEY_VX = struct {
+	vx: u8,
+};
+
+type SKNP_KEY_VX = struct {
+	vx: u8,
+};
+
+type LD_VX_DT = struct {
+	vx: u8,
+};
+
+type LD_DT_VX= struct {
+	vx: u8,
+};
+
 type LD_ST_VX= struct {
 	vx: u8,
 };
@@ -138,6 +158,7 @@ type opcode = (
 	| SHR_VX_VY
 	| SUBN_VX_VY
 	| SHL_VX_VY
+ 	| GET_KEY_VX
 	| ADD_VX_BYTE
 	| SE_VX_BYTE
 	| SNE_VX_BYTE
@@ -146,6 +167,10 @@ type opcode = (
 	| DISPLAY_VX_VY_NIB
 	| LD_VX_VY
 	| LD_I
+	| SKNP_KEY_VX
+	| SKP_KEY_VX
+	| LD_VX_DT
+	| LD_DT_VX
 	| LD_ST_VX
 	| LD_B_VX
 	| LD_I_VX
@@ -165,6 +190,7 @@ type cpu_state = struct {
 	display: [64 * 32]u8,
 	sound_timer: u16,
 	delay_timer: u16,
+	keys: [16]u16
 };
 
 const font: [_]u8 = [
@@ -286,6 +312,16 @@ fn cycle(cpu: *cpu_state) void = {
 		cpu.register[op.vx] <<= 1;
 		cpu.register[0xF] = (old_vx >> 7) & 1;
 		increment_pc(cpu);
+	case let op: GET_KEY_VX =>
+		fmt::printfln("GET_KEY_VX: VX: {:X}", op.vx)!;
+		// TODO: Still not fully implemented
+		let key_pressed = false;
+		for (let i = 0z; i < 16; i += 1) if (cpu.keys[i] == 1) {
+			cpu.register[op.vx] = 1;
+			key_pressed = true;
+			break;
+		};
+		if (!key_pressed) return;
 	case let op: SUBN_VX_VY =>
 		fmt::printfln("SUBN_VX_VY: {:X} OR {:X}", op.vx, op.vy)!;
 		cpu.register[op.vx] = cpu.register[op.vy] - cpu.register[op.vx];
@@ -321,13 +357,32 @@ fn cycle(cpu: *cpu_state) void = {
 					const tX = (registerX + x) % 64;
 					const tY = (registerY + y) % 32;
 					const idx = tX + tY * 64;
-					cpu.display[idx] ^= 1;
 					// NOTE: This might be wrong
-					if (cpu.display[idx] == 0)
+					cpu.display[idx] ^= 1;
+					if (cpu.display[idx] == 1) {
 						cpu.register[0xF] = 1;
+					};
 					};
 			};
 		};
+		increment_pc(cpu);
+	case let op: SKP_KEY_VX =>
+		fmt::printfln("SKP_KEY_VX: VX: {:X}: KEY: {:X}",
+			op.vx, cpu.register[op.vx])!;
+		if (cpu.keys[cpu.register[op.vx]] == 1) increment_pc(cpu);
+		increment_pc(cpu);
+	case let op: SKNP_KEY_VX =>
+		fmt::printfln("SKNP_KEY_VX: VX: {:X}: KEY: {:X}",
+			op.vx, cpu.register[op.vx])!;
+		if (cpu.keys[cpu.register[op.vx]] != 1) increment_pc(cpu);
+		increment_pc(cpu);
+	case let op: LD_VX_DT =>
+		fmt::printfln("LD_VX_DT: VX: {:X}", op.vx)!;
+		cpu.register[op.vx] = cpu.delay_timer: u8;
+		increment_pc(cpu);
+	case let op: LD_DT_VX =>
+		fmt::printfln("LD_DT_VX: VX: {:X}", op.vx)!;
+		cpu.delay_timer = cpu.register[op.vx];
 		increment_pc(cpu);
 	case let op: LD_ST_VX =>
 		fmt::printfln("LD_ST_VX: VX: {:X}", op.vx)!;
@@ -404,10 +459,18 @@ fn decode_opcode(raw_opcode: u16) (opcode | opcodeerr) = {
 	case 0x9 => yield SNE_VX_VY{ vx = X, vy = Y };
 	case 0xA => yield LD_I{ addr = NNN };
 	case 0xD => yield DISPLAY_VX_VY_NIB { vx = X, vy = Y, nibble = N };
+	case 0xE => yield switch (NN) {
+		case 0x9E => yield SKP_KEY_VX{ vx = X };
+		case 0xA1 => yield SKNP_KEY_VX{ vx = X };
+		case => yield opcodeerr{ raw = raw_opcode };
+	};
 	case 0xF => yield switch (NN) {
-		case 0x18 => yield LD_ST_VX { vx = X };
-		case 0x33 => yield LD_B_VX { vx = X };
-		case 0x55 => yield LD_I_VX { vx = X };
+		case 0x07 => yield LD_VX_DT{ vx = X };
+		case 0x0A => yield GET_KEY_VX{ vx = X };
+		case 0x15 => yield LD_DT_VX{ vx = X };
+		case 0x18 => yield LD_ST_VX{ vx = X };
+		case 0x33 => yield LD_B_VX{ vx = X };
+		case 0x55 => yield LD_I_VX{ vx = X };
 		case 0x65 => yield LD_VX_I{ vx = X };
 		case 0x1E => yield ADD_I_VX{ vx = X };
 		case => yield opcodeerr { raw = raw_opcode };

@@ -99,3 +99,7 @@ I have have found a test ROM that only uses 4 instructions, I believe this is a 
 + [X] Registers
 
 ** DONE Pass Flags test
+** TODO Rest of instructions not related to input or sound
+** TODO Input instructions
+** TODO Sound instructions
+
