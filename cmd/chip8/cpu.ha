@@ -7,6 +7,7 @@ use fs;
 use time;
 use bufio;
 use types;
+use math::random;
 
 type CLS = struct { x: void, };
 type RET = struct { x: void, };
@@ -127,12 +128,25 @@ type LD_ST_VX= struct {
 	vx: u8,
 };
 
+type LD_F_VX = struct {
+	vx: u8,
+};
+
 type LD_B_VX = struct {
 	vx: u8,
 };
 
 type LD_I_VX = struct {
 	vx: u8,
+};
+
+type JP_V0_ADDR = struct {
+	addr: u16,
+};
+
+type RND_VX_BYTE = struct {
+	vx: u8,
+	byte: u8,
 };
 
 type LD_VX_I = struct {
@@ -167,11 +181,14 @@ type opcode = (
 	| DISPLAY_VX_VY_NIB
 	| LD_VX_VY
 	| LD_I
+	| JP_V0_ADDR
+	| RND_VX_BYTE
 	| SKNP_KEY_VX
 	| SKP_KEY_VX
 	| LD_VX_DT
 	| LD_DT_VX
 	| LD_ST_VX
+	| LD_F_VX
 	| LD_B_VX
 	| LD_I_VX
 	| LD_VX_I
@@ -227,58 +244,58 @@ fn cycle(cpu: *cpu_state) void = {
 
 	match (opcode) {
 	case CLS =>
-		fmt::printfln("CLS")!;
+	// 	fmt::printfln("CLS")!;
 		for (let tile &.. cpu.display) *tile = 0x0;
 		increment_pc(cpu);
 	case RET =>
-		fmt::printfln("RET: stack_ptr: {:X}", cpu.stack_ptr)!;
+	// 	fmt::printfln("RET: stack_ptr: {:X}", cpu.stack_ptr)!;
 		cpu.stack_ptr -= 1;
 		cpu.program_counter = cpu.stack[cpu.stack_ptr];
 	case let op: CALL_ADDR =>
-		fmt::printfln("CALL_ADDR: addr: {:X}", op.addr)!;
+	// 	fmt::printfln("CALL_ADDR: addr: {:X}", op.addr)!;
 		cpu.stack[cpu.stack_ptr] = cpu.program_counter + 2;
 		cpu.stack_ptr += 1;
 		cpu.program_counter = op.addr;
 	case let op: JP_ADDR =>
 		cpu.program_counter = op.addr;
 	case let op: SE_VX_BYTE =>
-		fmt::printfln("SE_VX_BYTE: vx: {:X} to: {:X}", op.vx, op.byte)!;
+	// 	fmt::printfln("SE_VX_BYTE: vx: {:X} to: {:X}", op.vx, op.byte)!;
 		if (cpu.register[op.vx] == op.byte) increment_pc(cpu);
 		increment_pc(cpu);
 	case let op: SNE_VX_BYTE =>
-		fmt::printfln("SNE_VX_BYTE: vx: {:X} to: {:X}", op.vx, op.byte)!;
+	// 	fmt::printfln("SNE_VX_BYTE: vx: {:X} to: {:X}", op.vx, op.byte)!;
 		if (cpu.register[op.vx] != op.byte) increment_pc(cpu);
 		increment_pc(cpu);
 	case let op: SE_VX_VY =>
-		fmt::printfln("SE_VX_BYTE: vx: {:X} vy: {:X}", op.vx, op.vy)!;
+	// 	fmt::printfln("SE_VX_BYTE: vx: {:X} vy: {:X}", op.vx, op.vy)!;
 		if (cpu.register[op.vx] == cpu.register[op.vy]) increment_pc(cpu);
 		increment_pc(cpu);
 	case let op: SNE_VX_VY =>
-		fmt::printfln("SNE_VX_BYTE: vx: {:X} vy: {:X}", op.vx, op.vy)!;
+	// 	fmt::printfln("SNE_VX_BYTE: vx: {:X} vy: {:X}", op.vx, op.vy)!;
 		if (cpu.register[op.vx] != cpu.register[op.vy]) increment_pc(cpu);
 		increment_pc(cpu);
 	case let op: LD_VX_BYTE =>
-		fmt::printfln("LD_VX_BYTE: {:X} set to: {:X}", op.vx, op.byte)!;
+	// 	fmt::printfln("LD_VX_BYTE: {:X} set to: {:X}", op.vx, op.byte)!;
 		cpu.register[op.vx] = op.byte;
 		increment_pc(cpu);
 	case let op: LD_VX_VY =>
-		fmt::printfln("LD_VX_VY: vx: {} vy: {}", op.vx, op.vy)!;
+	// 	fmt::printfln("LD_VX_VY: vx: {} vy: {}", op.vx, op.vy)!;
 		cpu.register[op.vx] = cpu.register[op.vy];
 		increment_pc(cpu);
 	case let op: OR_VX_VY =>
-		fmt::printfln("OR_VX_VY: {:X} OR {:X}", op.vx, op.vy)!;
+	// 	fmt::printfln("OR_VX_VY: {:X} OR {:X}", op.vx, op.vy)!;
 		cpu.register[op.vx] = cpu.register[op.vx] | cpu.register[op.vy];
 		increment_pc(cpu);
 	case let op: AND_VX_VY =>
-		fmt::printfln("ADD_VX_VY: {:X} AND {:X}", op.vx, op.vy)!;
+	// 	fmt::printfln("ADD_VX_VY: {:X} AND {:X}", op.vx, op.vy)!;
 		cpu.register[op.vx] = cpu.register[op.vx] & cpu.register[op.vy];
 		increment_pc(cpu);
 	case let op: XOR_VX_VY =>
-		fmt::printfln("XOR_VX_VY: {:X} XOR {:X}", op.vx, op.vy)!;
+	// 	fmt::printfln("XOR_VX_VY: {:X} XOR {:X}", op.vx, op.vy)!;
 		cpu.register[op.vx] = cpu.register[op.vx] ^ cpu.register[op.vy];
 		increment_pc(cpu);
 	case let op: ADD_VX_VY =>
-		fmt::printfln("ADD_VX_VY: {:X} ADD {:X}", op.vx, op.vy)!;
+	// 	fmt::printfln("ADD_VX_VY: {:X} ADD {:X}", op.vx, op.vy)!;
 		// Must cast each register to u16 instead of sum as otherwise addition will
 		// treat is as two u8's
 		const sum = cpu.register[op.vx]: u16 + cpu.register[op.vy]: u16;
@@ -286,7 +303,7 @@ fn cycle(cpu: *cpu_state) void = {
 		cpu.register[0xF] = if (sum > 255) 1 else 0;
 		increment_pc(cpu);
 	case let op: SUB_VX_VY =>
-		fmt::printfln("SUB_VX_VY: {:X} SUB {:X}", op.vx, op.vy)!;
+	// 	fmt::printfln("SUB_VX_VY: {:X} SUB {:X}", op.vx, op.vy)!;
 		// This is to pass both second -> fourth checkmark on flags ROM
 		const old_vx = cpu.register[op.vx];
 		cpu.register[op.vx] -= cpu.register[op.vy];
@@ -296,7 +313,7 @@ fn cycle(cpu: *cpu_state) void = {
 		// This is an ambiguous instruction, we are targeting regular CHIP-8, so CHIP-48
 		// and SUPER-CHIP must be implemented differently Detailed here:
 		// https://tobiasvl.github.io/blog/write-a-chip-8-emulator/#8xy6-and-8xye-shift
-		fmt::printfln("SHR_VX_VY: {:X} SHR {:X}", op.vx, op.vy)!;
+	// 	fmt::printfln("SHR_VX_VY: {:X} SHR {:X}", op.vx, op.vy)!;
 		// The optional part is to set vx to the value of vy, this was present on the
 		// original COSMAC VIP
 		cpu.register[op.vx] = cpu.register[op.vy];
@@ -306,15 +323,16 @@ fn cycle(cpu: *cpu_state) void = {
 		increment_pc(cpu);
 	case let op: SHL_VX_VY =>
 		// This is the other ambiguous instruction, similar to SHR_VX_VY
-		fmt::printfln("SHL_VX_VY: {:X} SHL {:X}", op.vx, op.vy)!;
+	// 	fmt::printfln("SHL_VX_VY: {:X} SHL {:X}", op.vx, op.vy)!;
 		cpu.register[op.vx] = cpu.register[op.vy];
 		const old_vx = cpu.register[op.vx];
 		cpu.register[op.vx] <<= 1;
 		cpu.register[0xF] = (old_vx >> 7) & 1;
 		increment_pc(cpu);
 	case let op: GET_KEY_VX =>
-		fmt::printfln("GET_KEY_VX: VX: {:X}", op.vx)!;
-		// TODO: Still not fully implemented
+	// 	fmt::printfln("GET_KEY_VX: VX: {:X}", op.vx)!;
+		// TODO: Still not fully implemented as it relies on more
+		// accurate timing
 		let key_pressed = false;
 		for (let i = 0z; i < 16; i += 1) if (cpu.keys[i] == 1) {
 			cpu.register[op.vx] = 1;
@@ -322,14 +340,15 @@ fn cycle(cpu: *cpu_state) void = {
 			break;
 		};
 		if (!key_pressed) return;
+		increment_pc(cpu);
 	case let op: SUBN_VX_VY =>
-		fmt::printfln("SUBN_VX_VY: {:X} OR {:X}", op.vx, op.vy)!;
+	// 	fmt::printfln("SUBN_VX_VY: {:X} OR {:X}", op.vx, op.vy)!;
 		cpu.register[op.vx] = cpu.register[op.vy] - cpu.register[op.vx];
 		cpu.register[0xF] =
 			if (cpu.register[op.vy] >= cpu.register[op.vx]) 1 else 0;
 		increment_pc(cpu);
 	case let op: ADD_VX_BYTE =>
-		fmt::printfln("ADD_VX_BYTE")!;
+	// 	fmt::printfln("ADD_VX_BYTE")!;
 		const sum: u16 = cpu.register[op.vx] + op.byte;
 		if (sum > 255) {
 			cpu.register[0xF] = 1;
@@ -340,12 +359,23 @@ fn cycle(cpu: *cpu_state) void = {
 		cpu.register[op.vx] = sum: u8;
 		increment_pc(cpu);
 	case let op: LD_I => 
-		fmt::printfln("LD_I: set to: {:X}", op.addr)!;
+	// 	fmt::printfln("LD_I: set to: {:X}", op.addr)!;
 		cpu.register_i = op.addr;
 		increment_pc(cpu);
+	case let op: JP_V0_ADDR =>
+	// 	fmt::printfln("JP_V0_ADDR: addr: {:X}", op.addr)!;
+		cpu.program_counter = cpu.register[op.addr + cpu.register[0x0]];
+		increment_pc(cpu);
+	case let op: RND_VX_BYTE =>
+	// 	fmt::printfln("RND_VX_BYTE: vx: {:X}, byte: {:X}",
+			// op.vx, op.byte)!;
+		const cur_time = time::now(time::clock::MONOTONIC);
+		const lol_random = (random::init(cur_time.nsec: u64) & op.byte): u8;
+		cpu.register[op.vx] = lol_random;
+		increment_pc(cpu);
 	case let op: DISPLAY_VX_VY_NIB => 
-		fmt::printfln("DISPLAY_VX_VY_NIB: vx: {} vy: {} nib: {}",
-			op.vx, op.vy, op.nibble)!;
+	// 	fmt::printfln("DISPLAY_VX_VY_NIB: vx: {} vy: {} nib: {}",
+			// op.vx, op.vy, op.nibble)!;
 		cpu.register[0xF] = 0;
 		const registerX: u8 = cpu.register[op.vx];
 		const registerY: u8 = cpu.register[op.vy];
@@ -367,50 +397,53 @@ fn cycle(cpu: *cpu_state) void = {
 		};
 		increment_pc(cpu);
 	case let op: SKP_KEY_VX =>
-		fmt::printfln("SKP_KEY_VX: VX: {:X}: KEY: {:X}",
-			op.vx, cpu.register[op.vx])!;
+	// 	fmt::printfln("SKP_KEY_VX: VX: {:X}: KEY: {:X}",
+			// op.vx, cpu.register[op.vx])!;
 		if (cpu.keys[cpu.register[op.vx]] == 1) increment_pc(cpu);
 		increment_pc(cpu);
 	case let op: SKNP_KEY_VX =>
-		fmt::printfln("SKNP_KEY_VX: VX: {:X}: KEY: {:X}",
-			op.vx, cpu.register[op.vx])!;
+	// 	fmt::printfln("SKNP_KEY_VX: VX: {:X}: KEY: {:X}",
+			// op.vx, cpu.register[op.vx])!;
 		if (cpu.keys[cpu.register[op.vx]] != 1) increment_pc(cpu);
 		increment_pc(cpu);
 	case let op: LD_VX_DT =>
-		fmt::printfln("LD_VX_DT: VX: {:X}", op.vx)!;
+	// 	fmt::printfln("LD_VX_DT: VX: {:X}", op.vx)!;
 		cpu.register[op.vx] = cpu.delay_timer: u8;
 		increment_pc(cpu);
 	case let op: LD_DT_VX =>
-		fmt::printfln("LD_DT_VX: VX: {:X}", op.vx)!;
+	// 	fmt::printfln("LD_DT_VX: VX: {:X}", op.vx)!;
 		cpu.delay_timer = cpu.register[op.vx];
 		increment_pc(cpu);
 	case let op: LD_ST_VX =>
-		fmt::printfln("LD_ST_VX: VX: {:X}", op.vx)!;
+	// 	fmt::printfln("LD_ST_VX: VX: {:X}", op.vx)!;
 		cpu.sound_timer = cpu.register[op.vx];
 		increment_pc(cpu);
-	case let op: LD_B_VX =>
-		fmt::printfln("LD_B_VX: VX: {:X}", op.vx)!;
+	case let op: LD_F_VX => // TODO: Finish this
+	// 	fmt::printfln("LD_F_VX: VX: {:X}", op.vx)!;
+		increment_pc(cpu);
+		case let op: LD_B_VX =>
+	// 	fmt::printfln("LD_B_VX: VX: {:X}", op.vx)!;
 		cpu.memory[cpu.register_i] = cpu.register[op.vx] / 100 % 10;
 		cpu.memory[cpu.register_i+1] = cpu.register[op.vx] / 10 % 10;
 		cpu.memory[cpu.register_i+2] = cpu.register[op.vx] % 10;
 		increment_pc(cpu);
 	case let op: LD_I_VX =>
-		fmt::printfln("LD_I_VX: VX: {:X}", op.vx)!;
+	// 	fmt::printfln("LD_I_VX: VX: {:X}", op.vx)!;
 		for (let i = 0z; i <= op.vx; i += 1) {
 			cpu.memory[cpu.register_i + i] = cpu.register[i];
 		};
 		increment_pc(cpu);
 	case let op: LD_VX_I =>
-		fmt::printfln("LD_VX_I: VX: {:X}", op.vx)!;
+	// 	fmt::printfln("LD_VX_I: VX: {:X}", op.vx)!;
 		for (let i = 0z; i <= op.vx; i += 1) {
 			cpu.register[i] = cpu.memory[cpu.register_i + i];
 		};
 		increment_pc(cpu);
 	case let op: ADD_I_VX =>
-		fmt::printfln("ADD_I_VX: VX: {:X}", op.vx)!;
+	// 	fmt::printfln("ADD_I_VX: VX: {:X}", op.vx)!;
 		cpu.register_i += cpu.register[op.vx];
 		increment_pc(cpu);
-	case => fmt::printfln("Unknown: {:X}", raw_opcode)!;
+	// case => fmt::printfln("Unknown: {:X}", raw_opcode)!;
 	};
 };
 
@@ -458,6 +491,8 @@ fn decode_opcode(raw_opcode: u16) (opcode | opcodeerr) = {
 	};
 	case 0x9 => yield SNE_VX_VY{ vx = X, vy = Y };
 	case 0xA => yield LD_I{ addr = NNN };
+	case 0xB => yield JP_V0_ADDR{ addr = NNN };
+	case 0xC => yield RND_VX_BYTE{ vx = X, byte = NN };
 	case 0xD => yield DISPLAY_VX_VY_NIB { vx = X, vy = Y, nibble = N };
 	case 0xE => yield switch (NN) {
 		case 0x9E => yield SKP_KEY_VX{ vx = X };
@@ -469,6 +504,7 @@ fn decode_opcode(raw_opcode: u16) (opcode | opcodeerr) = {
 		case 0x0A => yield GET_KEY_VX{ vx = X };
 		case 0x15 => yield LD_DT_VX{ vx = X };
 		case 0x18 => yield LD_ST_VX{ vx = X };
+		case 0x29 => yield LD_F_VX{ vx = X };
 		case 0x33 => yield LD_B_VX{ vx = X };
 		case 0x55 => yield LD_I_VX{ vx = X };
 		case 0x65 => yield LD_VX_I{ vx = X };

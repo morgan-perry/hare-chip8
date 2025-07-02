@@ -57,7 +57,7 @@ fn build_texture(cpu: *cpu_state, draw: *draw_state) void = {
         	fmt::fatalf("SDL_LockTexture returned null buffer");
     	case let raw: *opaque =>
         	// Case from void* to uinptr then to *[]u32
-        	const pixels = (raw: uintptr) : *[2048]u32;
+        	const pixels = raw: *[2048]u32;
 
 		for (let y = 0z; y < 32; y += 1) {
 			for (let x = 0z; x < 64; x += 1) {
@@ -121,7 +121,7 @@ fn draw_state_init() draw_state = {
 
 	const window: nullable *SDL_Window = null;
 	const rend: nullable *SDL_Renderer = null;
-	SDL_CreateWindowAndRenderer(c::nulstr("hare-sdl3 demo\0"),
+	SDL_CreateWindowAndRenderer(c::nulstr("hare-sdl3\0"),
 		640, 480, 0, &window, &rend);
 	assert(window != null); assert(rend != null);
 
