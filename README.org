@@ -1,0 +1,35 @@
+* CHIP-8 Interpreter
+
+This is an incomplete CHIP-8 interpreter written in the Hare programming language and using SDL3 for displaying graphics.
+
+* Features
+
+  * Displaying correct pixels
+  * Input handling (except GET_KEY)
+  * Correct arithmetic flags
+
+* Features not implemented
+
+  * Correct sound and delay timers, as of now a simple time::sleep()
+  * Sound
+  * Quirks (from Timendus's [[https://github.com/Timendus/chip8-test-suite][chip8-test-suite]])
+  * Super CHIP-48 instructions, and/or other super sets
+
+* Building
+
+Built using Hare 0.25.2 and SDL3 (using [[https://git.sr.ht/~sircmpwn/][Drew DeVault's]] [[https://git.sr.ht/~sircmpwn/hare-sdl3][bindings]]). As Hare does not officially support Windows or Mac, I can only confirm this building on Linux (personally on Fedora 42).
+
+#+caption: Build
+#+begin_src sh
+make build
+#+end_src
+
+#+caption: Run
+#+begin_src sh
+make run
+#+end_src
+
+caption: Test
+#+begin_src sh
+make check
+#+end_src
